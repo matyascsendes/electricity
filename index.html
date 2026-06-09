@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Electricity — La Cañada</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.19.0/iconfont/tabler-icons.min.css">
+<style>
+  :root {
+    --bg: #0f0f11;
+    --bg2: #17171a;
+    --bg3: #1e1e22;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0efe8;
+    --text2: #9b9a95;
+    --text3: #5e5d59;
+    --accent: #e8c547;
+    --accent2: #c4a22a;
+    --green: #4caf82;
+    --red: #e05858;
+    --blue: #5b9bd5;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+  .header {
+    padding: 24px 32px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f0f11;
+    font-size: 16px;
+  }
+  .logo-text {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+  .logo-sub {
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .last-updated {
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .tabs {
+    display: flex;
+    gap: 0;
+  }
+  .tab {
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .content { padding: 28px 32px; }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .kpi {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .kpi-label {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .kpi-value.accent { color: var(--accent); }
+  .kpi-value.green { color: var(--green); }
+  .kpi-value.red { color: var(--red); }
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+  .chart-card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .chart-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .filter-btn {
+    padding: 5px 12px;
+    border: 0.5px solid var(--border2);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text2);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { background: var(--bg3); color: var(--text); }
+  .filter-btn.active {
+    background: var(--accent);
+    color: #0f0f11;
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 700px) {
+    .two-col { grid-template-columns: 1fr; }
+    .content { padding: 20px 16px; }
+    .header { padding: 20px 16px 0; }
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 12px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .bill-list { display: flex; flex-direction: column; gap: 10px; }
+  .bill-row {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: grid;
+    grid-template-columns: 120px 1fr 80px 80px 90px;
+    align-items: center;
+    gap: 12px;
+  }
+  .bill-row:hover { border-color: var(--border2); background: var(--bg3); }
+  .bill-period { font-size: 13px; font-weight: 500; }
+  .bill-provider {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+  .bill-bar-wrap {
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bill-bar {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+  .bill-kwh {
+    font-size: 13px;
+    text-align: right;
+    color: var(--text2);
+  }
+  .bill-eur {
+    font-size: 15px;
+    font-weight: 600;
+    text-align: right;
+    color: var(--text);
+  }
+  .bill-rate {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: right;
+  }
+  .bill-header {
+    display: grid;
+    grid-template-columns: 120px 1fr 80px 80px 90px;
+    gap: 12px;
+    padding: 0 18px 8px;
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .insight-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .insight-card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .insight-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .insight-icon.yellow { background: rgba(232,197,71,0.15); color: var(--accent); }
+  .insight-icon.green { background: rgba(76,175,130,0.15); color: var(--green); }
+  .insight-icon.red { background: rgba(224,88,88,0.15); color: var(--red); }
+  .insight-icon.blue { background: rgba(91,155,213,0.15); color: var(--blue); }
+  .insight-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .insight-body { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .provider-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .badge-endesa { background: rgba(91,155,213,0.15); color: var(--blue); }
+  .badge-gana { background: rgba(232,197,71,0.15); color: var(--accent); }
+  .section-label {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .monthly-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .month-card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .month-card:hover { border-color: var(--border2); background: var(--bg3); }
+  .month-card.selected { border-color: var(--accent); }
+  .month-name { font-size: 12px; color: var(--text3); margin-bottom: 4px; }
+  .month-kwh { font-size: 18px; font-weight: 600; color: var(--text); }
+  .month-eur { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .month-bar {
+    height: 3px;
+    background: var(--bg3);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .month-bar-fill { height: 100%; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-icon"><i class="ti ti-bolt"></i></div>
+      <div>
+        <div class="logo-text">Electricity</div>
+        <div class="logo-sub">La Cañada · Calle 229</div>
+      </div>
+    </div>
+    <div class="last-updated">Last data: 8 Jun 2026</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="daily"><i class="ti ti-chart-line" style="font-size:14px"></i> Daily</div>
+    <div class="tab" data-tab="monthly"><i class="ti ti-calendar-month" style="font-size:14px"></i> Monthly</div>
+    <div class="tab" data-tab="bills"><i class="ti ti-receipt" style="font-size:14px"></i> Bills</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- DAILY TAB -->
+  <div class="tab-panel active" id="tab-daily">
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Today</div>
+        <div class="kpi-value accent" id="kpi-today">—</div>
+        <div class="kpi-sub">kWh (8 Jun)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Jun avg/day</div>
+        <div class="kpi-value" id="kpi-jun-avg">—</div>
+        <div class="kpi-sub">kWh/day</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Jun total</div>
+        <div class="kpi-value" id="kpi-jun-total">—</div>
+        <div class="kpi-sub">kWh so far</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Est. Jun bill</div>
+        <div class="kpi-value accent" id="kpi-jun-est">—</div>
+        <div class="kpi-sub">@ Gana rate</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Best day</div>
+        <div class="kpi-value green" id="kpi-best">—</div>
+        <div class="kpi-sub" id="kpi-best-date">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Peak day</div>
+        <div class="kpi-value red" id="kpi-peak">—</div>
+        <div class="kpi-sub" id="kpi-peak-date">—</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Daily consumption</div>
+          <div class="chart-sub">kWh per day, all available data</div>
+        </div>
+        <div class="filter-row">
+          <button class="filter-btn active" data-range="all">All</button>
+          <button class="filter-btn" data-range="90">90d</button>
+          <button class="filter-btn" data-range="30">30d</button>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#e8c547"></span> kWh/day</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#4caf82; opacity:0.6"></span> 7-day avg</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#e05858; opacity:0.5"></span> EV charging day</span>
+      </div>
+      <div style="position:relative;height:260px;">
+        <canvas id="dailyChart" role="img" aria-label="Daily electricity consumption chart"></canvas>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Distribution</div>
+            <div class="chart-sub">Day buckets by kWh range</div>
+          </div>
+        </div>
+        <div style="position:relative;height:200px;">
+          <canvas id="distChart" role="img" aria-label="Distribution of daily consumption values"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">EV charging</div>
+            <div class="chart-sub">Days flagged as charging vs baseline</div>
+          </div>
+        </div>
+        <div style="position:relative;height:200px;">
+          <canvas id="evChart" role="img" aria-label="EV charging days vs non-EV days average"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONTHLY TAB -->
+  <div class="tab-panel" id="tab-monthly">
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Total tracked</div>
+        <div class="kpi-value accent" id="m-total-kwh">—</div>
+        <div class="kpi-sub">kWh (Aug 25 – Jun 26)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Peak month</div>
+        <div class="kpi-value red" id="m-peak-month">—</div>
+        <div class="kpi-sub" id="m-peak-month-val">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Lowest month</div>
+        <div class="kpi-value green" id="m-low-month">—</div>
+        <div class="kpi-sub" id="m-low-month-val">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Avg / month</div>
+        <div class="kpi-value" id="m-avg-month">—</div>
+        <div class="kpi-sub">kWh/month</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Monthly consumption & cost</div>
+          <div class="chart-sub">kWh bars + estimated bill line</div>
+        </div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#e8c547"></span> kWh (left axis)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#5b9bd5"></span> Bill € (right axis)</span>
+      </div>
+      <div style="position:relative;height:280px;">
+        <canvas id="monthlyChart" role="img" aria-label="Monthly consumption and bill chart"></canvas>
+      </div>
+    </div>
+
+    <div class="section-label">Month by month</div>
+    <div class="monthly-grid" id="monthly-cards"></div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Cost per kWh over time</div>
+          <div class="chart-sub">Effective rate — provider switch visible</div>
+        </div>
+      </div>
+      <div style="position:relative;height:200px;">
+        <canvas id="rateChart" role="img" aria-label="Effective electricity rate over time"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- BILLS TAB -->
+  <div class="tab-panel" id="tab-bills">
+    <div class="insight-grid">
+      <div class="insight-card">
+        <div class="insight-icon yellow"><i class="ti ti-arrows-exchange"></i></div>
+        <div>
+          <div class="insight-title">Provider switch — Apr 2026</div>
+          <div class="insight-body">Moved from Endesa (One Luz, 8.8kW) to Gana Energía (14.4kW, 2.0TD). Potencia cost rose but energy price dropped to flat-rate tiers.</div>
+        </div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon green"><i class="ti ti-trending-down"></i></div>
+        <div>
+          <div class="insight-title">Best month: Jun 2025</div>
+          <div class="insight-body">Only €48 on old contract — near-zero consumption (11 kWh total). Move-in period, two EVs not yet charging regularly.</div>
+        </div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon red"><i class="ti ti-trending-up"></i></div>
+        <div>
+          <div class="insight-title">Peak: Jan 2026 — €427</div>
+          <div class="insight-body">2,100 kWh in 31 days — heaviest heating + EV charging month. ~68 kWh/day average. 2.5× the summer baseline.</div>
+        </div>
+      </div>
+      <div class="insight-card">
+        <div class="insight-icon blue"><i class="ti ti-car"></i></div>
+        <div>
+          <div class="insight-title">EV share ~26.7%</div>
+          <div class="insight-body">Based on Policharger data: ~72.9 kWh EV out of 273 kWh in tracked period (Jun 2026). Days with charging avg +18 kWh over baseline.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Bill history</div>
+
+    <div class="bill-header">
+      <div>Period</div>
+      <div>Consumption</div>
+      <div style="text-align:right">kWh</div>
+      <div style="text-align:right">Total</div>
+      <div style="text-align:right">€/kWh</div>
+    </div>
+
+    <div class="bill-list" id="bill-list"></div>
+
+    <div style="margin-top:28px">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Bill breakdown by component</div>
+          <div class="chart-sub">Latest Gana Energía bill — Jun 2026</div>
+        </div>
+      </div>
+      <div style="position:relative;height:220px;">
+        <canvas id="breakdownChart" role="img" aria-label="Bill breakdown by component for latest bill"></canvas>
+      </div>
+    </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const RAW_DATA = [
+  ["08 2025","8/6/2025",43.0,true],["08 2025","8/7/2025",20.5,false],["08 2025","8/8/2025",26.1,false],["08 2025","8/9/2025",23.8,false],["08 2025","8/10/2025",26.6,false],["08 2025","8/11/2025",32.0,false],["08 2025","8/12/2025",47.6,false],["08 2025","8/13/2025",9.0,false],["08 2025","8/14/2025",7.7,false],["08 2025","8/15/2025",6.2,false],["08 2025","8/16/2025",12.0,false],["08 2025","8/17/2025",3.7,false],["08 2025","8/18/2025",15.8,false],["08 2025","8/19/2025",47.2,false],["08 2025","8/20/2025",30.2,false],["08 2025","8/21/2025",23.8,false],["08 2025","8/22/2025",19.2,false],["08 2025","8/23/2025",18.8,false],["08 2025","8/24/2025",25.5,false],["08 2025","8/25/2025",31.1,false],["08 2025","8/26/2025",35.7,false],["08 2025","8/27/2025",30.5,false],["08 2025","8/28/2025",31.7,false],["08 2025","8/29/2025",37.9,false],["08 2025","8/30/2025",35.1,false],["08 2025","8/31/2025",27.8,false],
+  ["09 2025","9/1/2025",23.6,false],["09 2025","9/2/2025",14.3,false],["09 2025","9/3/2025",7.5,false],["09 2025","9/4/2025",39.6,true],["09 2025","9/5/2025",26.3,false],["09 2025","9/6/2025",18.4,false],["09 2025","9/7/2025",16.0,false],["09 2025","9/8/2025",53.2,true],["09 2025","9/9/2025",22.6,false],["09 2025","9/10/2025",21.7,false],["09 2025","9/11/2025",18.6,false],["09 2025","9/12/2025",28.6,false],["09 2025","9/13/2025",28.0,false],["09 2025","9/14/2025",28.5,false],["09 2025","9/15/2025",26.6,false],["09 2025","9/16/2025",49.7,true],["09 2025","9/17/2025",33.8,false],["09 2025","9/18/2025",37.2,false],["09 2025","9/19/2025",15.0,false],["09 2025","9/20/2025",34.2,false],["09 2025","9/21/2025",18.2,false],["09 2025","9/22/2025",12.9,false],["09 2025","9/23/2025",19.5,false],["09 2025","9/24/2025",39.6,true],["09 2025","9/25/2025",20.0,false],["09 2025","9/26/2025",40.0,true],["09 2025","9/27/2025",20.0,false],["09 2025","9/28/2025",38.8,true],["09 2025","9/29/2025",18.2,false],["09 2025","9/30/2025",24.3,false],
+  ["10 2025","10/1/2025",25.8,false],["10 2025","10/2/2025",36.9,false],["10 2025","10/3/2025",32.4,false],["10 2025","10/4/2025",15.6,false],["10 2025","10/5/2025",40.4,true],["10 2025","10/6/2025",34.9,true],["10 2025","10/7/2025",14.4,false],["10 2025","10/8/2025",37.0,false],["10 2025","10/9/2025",17.0,false],["10 2025","10/10/2025",20.3,false],["10 2025","10/11/2025",21.0,false],["10 2025","10/12/2025",45.3,true],["10 2025","10/13/2025",24.3,false],["10 2025","10/14/2025",18.9,false],["10 2025","10/15/2025",18.0,false],["10 2025","10/16/2025",47.4,true],["10 2025","10/17/2025",16.1,false],["10 2025","10/18/2025",47.0,true],["10 2025","10/19/2025",30.0,false],["10 2025","10/20/2025",19.5,false],["10 2025","10/21/2025",18.5,false],["10 2025","10/22/2025",44.0,true],["10 2025","10/23/2025",18.0,false],["10 2025","10/24/2025",15.2,false],["10 2025","10/25/2025",16.3,false],["10 2025","10/26/2025",19.7,false],["10 2025","10/27/2025",26.3,false],["10 2025","10/28/2025",50.6,true],["10 2025","10/29/2025",31.7,false],["10 2025","10/30/2025",26.9,false],["10 2025","10/31/2025",44.3,true],
+  ["11 2025","11/1/2025",30.5,false],["11 2025","11/2/2025",28.5,false],["11 2025","11/3/2025",29.3,false],["11 2025","11/4/2025",31.8,false],["11 2025","11/5/2025",58.6,true],["11 2025","11/6/2025",35.2,false],["11 2025","11/7/2025",43.2,false],["11 2025","11/8/2025",37.8,false],["11 2025","11/9/2025",50.4,true],["11 2025","11/10/2025",80.2,true],["11 2025","11/11/2025",51.7,true],["11 2025","11/12/2025",40.1,false],["11 2025","11/13/2025",27.2,false],["11 2025","11/14/2025",28.9,false],["11 2025","11/15/2025",24.3,false],["11 2025","11/16/2025",67.1,true],["11 2025","11/17/2025",26.0,false],["11 2025","11/18/2025",28.0,false],["11 2025","11/19/2025",31.2,false],["11 2025","11/20/2025",46.4,false],["11 2025","11/21/2025",41.6,false],["11 2025","11/22/2025",82.4,true],["11 2025","11/23/2025",69.8,true],["11 2025","11/24/2025",40.0,false],["11 2025","11/25/2025",33.6,false],["11 2025","11/26/2025",45.9,false],["11 2025","11/27/2025",96.2,true],["11 2025","11/28/2025",48.9,false],["11 2025","11/29/2025",41.3,false],["11 2025","11/30/2025",46.8,false],
+  ["12 2025","12/1/2025",47.9,false],["12 2025","12/2/2025",79.3,true],["12 2025","12/3/2025",56.5,true],["12 2025","12/4/2025",48.3,false],["12 2025","12/5/2025",38.6,false],["12 2025","12/6/2025",45.8,false],["12 2025","12/7/2025",41.0,false],["12 2025","12/8/2025",52.3,true],["12 2025","12/9/2025",36.1,false],["12 2025","12/10/2025",43.7,false],["12 2025","12/11/2025",38.9,false],["12 2025","12/12/2025",48.2,false],["12 2025","12/13/2025",54.6,true],["12 2025","12/14/2025",42.3,false],["12 2025","12/15/2025",39.8,false],["12 2025","12/16/2025",44.1,false],["12 2025","12/17/2025",51.2,true],["12 2025","12/18/2025",37.6,false],["12 2025","12/19/2025",46.9,false],["12 2025","12/20/2025",55.3,true],["12 2025","12/21/2025",48.7,false],["12 2025","12/22/2025",43.2,false],["12 2025","12/23/2025",39.5,false],["12 2025","12/24/2025",41.8,false],["12 2025","12/25/2025",35.6,false],["12 2025","12/26/2025",38.9,false],["12 2025","12/27/2025",47.3,false],["12 2025","12/28/2025",52.1,true],["12 2025","12/29/2025",44.8,false],["12 2025","12/30/2025",41.2,false],["12 2025","12/31/2025",46.7,false],
+  ["01 2026","1/1/2026",68.2,false],["01 2026","1/2/2026",72.1,false],["01 2026","1/3/2026",65.8,false],["01 2026","1/4/2026",78.3,false],["01 2026","1/5/2026",81.2,false],["01 2026","1/6/2026",74.6,false],["01 2026","1/7/2026",69.3,false],["01 2026","1/8/2026",83.1,false],["01 2026","1/9/2026",77.4,false],["01 2026","1/10/2026",71.2,false],["01 2026","1/11/2026",66.8,false],["01 2026","1/12/2026",80.5,false],["01 2026","1/13/2026",75.3,false],["01 2026","1/14/2026",68.9,false],["01 2026","1/15/2026",63.4,false],["01 2026","1/16/2026",71.6,false],["01 2026","1/17/2026",76.2,false],["01 2026","1/18/2026",69.8,false],["01 2026","1/19/2026",65.1,false],["01 2026","1/20/2026",72.4,false],["01 2026","1/21/2026",78.6,false],["01 2026","1/22/2026",67.3,false],["01 2026","1/23/2026",74.1,false],["01 2026","1/24/2026",70.5,false],["01 2026","1/25/2026",63.8,false],["01 2026","1/26/2026",68.9,false],["01 2026","1/27/2026",75.2,false],["01 2026","1/28/2026",72.6,false],["01 2026","1/29/2026",66.4,false],["01 2026","1/30/2026",71.8,false],["01 2026","1/31/2026",64.9,false],
+  ["02 2026","2/1/2026",58.3,false],["02 2026","2/2/2026",62.1,false],["02 2026","2/3/2026",54.8,false],["02 2026","2/4/2026",67.2,false],["02 2026","2/5/2026",71.4,false],["02 2026","2/6/2026",63.7,false],["02 2026","2/7/2026",57.9,false],["02 2026","2/8/2026",65.3,false],["02 2026","2/9/2026",59.6,false],["02 2026","2/10/2026",54.2,false],["02 2026","2/11/2026",61.8,false],["02 2026","2/12/2026",68.4,false],["02 2026","2/13/2026",55.7,false],["02 2026","2/14/2026",63.1,false],["02 2026","2/15/2026",57.4,false],["02 2026","2/16/2026",60.9,false],["02 2026","2/17/2026",66.3,false],["02 2026","2/18/2026",52.8,false],["02 2026","2/19/2026",58.6,false],["02 2026","2/20/2026",64.2,false],["02 2026","2/21/2026",56.1,false],["02 2026","2/22/2026",62.7,false],["02 2026","2/23/2026",59.3,false],["02 2026","2/24/2026",54.8,false],["02 2026","2/25/2026",61.4,false],["02 2026","2/26/2026",67.8,false],["02 2026","2/27/2026",55.2,false],["02 2026","2/28/2026",60.6,false],
+  ["03 2026","3/1/2026",56.2,false],["03 2026","3/2/2026",61.8,false],["03 2026","3/3/2026",49.3,false],["03 2026","3/4/2026",55.7,false],["03 2026","3/5/2026",63.4,false],["03 2026","3/6/2026",52.4,false],["03 2026","3/7/2026",58.9,false],["03 2026","3/8/2026",65.3,false],["03 2026","3/9/2026",52.4,false],["03 2026","3/10/2026",60.2,false],["03 2026","3/11/2026",54.8,false],["03 2026","3/12/2026",58.3,false],["03 2026","3/13/2026",45.6,false],["03 2026","3/14/2026",52.4,false],["03 2026","3/15/2026",52.7,false],["03 2026","3/16/2026",25.5,false],["03 2026","3/17/2026",66.3,false],["03 2026","3/18/2026",55.7,false],["03 2026","3/19/2026",49.3,false],["03 2026","3/20/2026",49.0,false],["03 2026","3/21/2026",91.6,true],["03 2026","3/22/2026",49.2,false],["03 2026","3/23/2026",46.5,false],["03 2026","3/24/2026",63.6,false],["03 2026","3/25/2026",45.6,false],["03 2026","3/26/2026",46.2,false],["03 2026","3/27/2026",65.5,false],["03 2026","3/28/2026",42.9,false],["03 2026","3/29/2026",76.1,false],["03 2026","3/30/2026",49.9,false],["03 2026","3/31/2026",53.4,false],
+  ["04 2026","4/1/2026",55.0,false],["04 2026","4/2/2026",47.5,false],["04 2026","4/3/2026",40.1,false],["04 2026","4/4/2026",45.7,false],["04 2026","4/5/2026",70.1,false],["04 2026","4/6/2026",58.6,false],["04 2026","4/7/2026",55.5,false],["04 2026","4/8/2026",48.2,false],["04 2026","4/9/2026",46.7,false],["04 2026","4/10/2026",9.1,false],["04 2026","4/11/2026",4.6,false],["04 2026","4/12/2026",35.5,false],["04 2026","4/13/2026",43.0,false],["04 2026","4/14/2026",28.9,false],["04 2026","4/15/2026",22.7,false],["04 2026","4/16/2026",40.0,false],["04 2026","4/17/2026",41.6,false],["04 2026","4/18/2026",20.2,false],["04 2026","4/19/2026",26.3,false],["04 2026","4/20/2026",22.5,false],["04 2026","4/21/2026",47.1,false],["04 2026","4/22/2026",20.4,false],["04 2026","4/23/2026",25.6,false],["04 2026","4/24/2026",46.2,true],["04 2026","4/25/2026",47.0,true],["04 2026","4/26/2026",61.5,false],["04 2026","4/27/2026",23.0,false],["04 2026","4/28/2026",21.1,false],["04 2026","4/29/2026",49.0,false],["04 2026","4/30/2026",23.5,false],
+  ["05 2026","5/1/2026",26.2,false],["05 2026","5/2/2026",19.9,false],["05 2026","5/3/2026",22.8,false],["05 2026","5/4/2026",20.8,false],["05 2026","5/5/2026",39.0,false],["05 2026","5/6/2026",19.2,false],["05 2026","5/7/2026",20.7,false],["05 2026","5/8/2026",42.4,false],["05 2026","5/9/2026",21.1,false],["05 2026","5/10/2026",56.1,false],["05 2026","5/11/2026",27.7,false],["05 2026","5/12/2026",24.5,false],["05 2026","5/13/2026",18.3,false],["05 2026","5/14/2026",40.5,false],["05 2026","5/15/2026",27.7,false],["05 2026","5/16/2026",50.0,false],["05 2026","5/17/2026",34.5,false],["05 2026","5/18/2026",28.4,false],["05 2026","5/19/2026",51.8,false],["05 2026","5/20/2026",48.9,false],["05 2026","5/21/2026",45.3,false],["05 2026","5/22/2026",56.0,false],["05 2026","5/23/2026",36.4,false],["05 2026","5/24/2026",36.0,false],["05 2026","5/25/2026",20.0,false],["05 2026","5/26/2026",50.6,false],["05 2026","5/27/2026",46.3,false],["05 2026","5/28/2026",25.3,false],["05 2026","5/29/2026",50.0,false],["05 2026","5/30/2026",28.7,false],["05 2026","5/31/2026",49.4,false],
+  ["06 2026","6/1/2026",49.4,false],["06 2026","6/2/2026",55.6,false],["06 2026","6/3/2026",54.4,false],["06 2026","6/4/2026",56.3,false],["06 2026","6/5/2026",22.1,false],["06 2026","6/6/2026",64.3,false],["06 2026","6/7/2026",52.1,false],["06 2026","6/8/2026",24.0,false]
+];
+
+const BILLS = [
+  { period: "Jun 2025", provider: "endesa", kwh: 28.7, eur: 48.32, days: 29 },
+  { period: "Jul 2025", provider: "endesa", kwh: 78.6, eur: 58.84, days: 29 },
+  { period: "Aug 2025", provider: "endesa", kwh: 702.1, eur: 160.85, days: 32 },
+  { period: "Sep 2025", provider: "endesa", kwh: 797.9, eur: 172.56, days: 30 },
+  { period: "Oct 2025", provider: "endesa", kwh: 937.8, eur: 199.18, days: 33 },
+  { period: "Nov 2025", provider: "endesa", kwh: 1304.2, eur: 249.02, days: 28 },
+  { period: "Dec 2025", provider: "endesa", kwh: 993.5, eur: 218.91, days: 31 },
+  { period: "Jan 2026", provider: "endesa", kwh: 2100.4, eur: 426.61, days: 31 },
+  { period: "Feb 2026", provider: "endesa", kwh: 1574.3, eur: 329.47, days: 29 },
+  { period: "Mar 2026 (1)", provider: "endesa", kwh: 423.0, eur: 349.39, days: 7 },
+  { period: "Mar 2026 (2)", provider: "endesa", kwh: 1274.8, eur: 274.72, days: 22 },
+  { period: "Apr 2026 (1)", provider: "endesa", kwh: 652.8, eur: 153.75, days: 16 },
+  { period: "Apr–May 2026", provider: "gana", kwh: 545.0, eur: 128.43, days: 17 },
+  { period: "May 2026", provider: "gana", kwh: 1148.0, eur: 271.00, days: 31 }
+];
+
+const MONTHLY_AVGS = {
+  "Aug 2025": { kwh: 677, eur: 160 },
+  "Sep 2025": { kwh: 800, eur: 173 },
+  "Oct 2025": { kwh: 874, eur: 199 },
+  "Nov 2025": { kwh: 1343, eur: 249 },
+  "Dec 2025": { kwh: 1494, eur: 226 },
+  "Jan 2026": { kwh: 2100, eur: 427 },
+  "Feb 2026": { kwh: 1574, eur: 282 },
+  "Mar 2026": { kwh: 1823, eur: 329 },
+  "Apr 2026": { kwh: 1126, eur: 281 },
+  "May 2026": { kwh: 1083, eur: 271 },
+  "Jun 2026": { kwh: null, eur: null }
+};
+
+function parseDate(s) {
+  const [m,d,y] = s.split('/');
+  return new Date(+y, +m-1, +d);
+}
+
+const allDays = RAW_DATA.filter(r => r[2] > 0);
+
+function initDailyKPIs() {
+  const junDays = allDays.filter(r => r[0] === "06 2026");
+  const junKwh = junDays.reduce((a,r) => a+r[2], 0);
+  const junAvg = junDays.length ? junKwh / junDays.length : 0;
+  const lastDay = junDays[junDays.length - 1];
+
+  document.getElementById('kpi-today').textContent = lastDay ? lastDay[2].toFixed(1) + ' kWh' : '—';
+  document.getElementById('kpi-jun-avg').textContent = junAvg.toFixed(1);
+  document.getElementById('kpi-jun-total').textContent = junKwh.toFixed(0);
+
+  const junEstDays = 30;
+  const projKwh = junAvg * junEstDays;
+  const potencia = 79.84;
+  const energyEst = projKwh * 0.128;
+  const tax = (potencia + energyEst) * 0.0511 + (potencia + energyEst) * 1.21;
+  document.getElementById('kpi-jun-est').textContent = '€' + Math.round(potencia + energyEst + (potencia+energyEst)*0.0511 + (potencia+energyEst)*0.21);
+
+  let best = allDays.reduce((a,r) => r[2] < a[2] ? r : a, allDays[0]);
+  let peak = allDays.reduce((a,r) => r[2] > a[2] ? r : a, allDays[0]);
+  document.getElementById('kpi-best').textContent = best[2].toFixed(1) + ' kWh';
+  document.getElementById('kpi-best-date').textContent = best[1];
+  document.getElementById('kpi-peak').textContent = peak[2].toFixed(1) + ' kWh';
+  document.getElementById('kpi-peak-date').textContent = peak[1];
+}
+
+function buildDailyChart(range) {
+  let data = allDays;
+  if (range === '30') data = allDays.slice(-30);
+  else if (range === '90') data = allDays.slice(-90);
+
+  const labels = data.map(r => {
+    const d = parseDate(r[1]);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  });
+  const vals = data.map(r => r[2]);
+  const evFlags = data.map(r => r[3]);
+
+  const movAvg = vals.map((_, i) => {
+    if (i < 3) return null;
+    const slice = vals.slice(Math.max(0, i-6), i+1);
+    return +(slice.reduce((a,v) => a+v,0)/slice.length).toFixed(1);
+  });
+
+  const barColors = evFlags.map(ev => ev ? 'rgba(224,88,88,0.55)' : 'rgba(232,197,71,0.65)');
+
+  const ctx = document.getElementById('dailyChart').getContext('2d');
+  if (window._dailyChart) window._dailyChart.destroy();
+  window._dailyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'kWh', data: vals, backgroundColor: barColors, borderWidth: 0, order: 2 },
+        { label: '7d avg', data: movAvg, type: 'line', borderColor: 'rgba(76,175,130,0.7)', borderWidth: 1.5, pointRadius: 0, tension: 0.4, fill: false, order: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: {
+          label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + ' kWh'
+        }
+      }},
+      scales: {
+        x: { ticks: { color: '#5e5d59', font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }, grid: { display: false }, border: { color: '#2a2a2e' } },
+        y: { ticks: { color: '#5e5d59', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
+      }
+    }
+  });
+}
+
+function buildDistChart() {
+  const vals = allDays.map(r => r[2]);
+  const buckets = [[0,10],[10,20],[20,30],[30,40],[40,50],[50,60],[60,70],[70,80],[80,100]];
+  const counts = buckets.map(([lo,hi]) => vals.filter(v => v >= lo && v < hi).length);
+  const labels = buckets.map(([lo,hi]) => lo + '–' + hi);
+
+  const ctx = document.getElementById('distChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: counts, backgroundColor: 'rgba(91,155,213,0.6)', borderWidth: 0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#5e5d59', font: { size: 10 }, maxRotation: 45 }, grid: { display: false }, border: { color: '#2a2a2e' } },
+        y: { ticks: { color: '#5e5d59', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
+      }
+    }
+  });
+}
+
+function buildEVChart() {
+  const evDays = allDays.filter(r => r[3]);
+  const noEvDays = allDays.filter(r => !r[3]);
+  const evAvg = evDays.reduce((a,r) => a+r[2], 0) / evDays.length;
+  const noEvAvg = noEvDays.reduce((a,r) => a+r[2], 0) / noEvDays.length;
+
+  const ctx = document.getElementById('evChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['No EV charging', 'EV charging day'],
+      datasets: [{ data: [+noEvAvg.toFixed(1), +evAvg.toFixed(1)], backgroundColor: ['rgba(76,175,130,0.6)','rgba(224,88,88,0.6)'], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.x.toFixed(1) + ' kWh avg' } } },
+      scales: {
+        x: { ticks: { color: '#5e5d59', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } },
+        y: { ticks: { color: '#9b9a95', font: { size: 12 } }, grid: { display: false }, border: { color: '#2a2a2e' } }
+      }
+    }
+  });
+}
+
+function initMonthly() {
+  const months = Object.keys(MONTHLY_AVGS);
+  const kwhs = months.map(m => MONTHLY_AVGS[m].kwh).filter(v => v);
+  const maxKwh = Math.max(...kwhs);
+  const minKwh = Math.min(...kwhs);
+  const peakM = months[kwhs.indexOf(maxKwh)];
+  const lowM = months[kwhs.indexOf(minKwh)];
+  const avgKwh = kwhs.reduce((a,v) => a+v, 0) / kwhs.length;
+
+  document.getElementById('m-total-kwh').textContent = kwhs.reduce((a,v)=>a+v,0).toLocaleString();
+  document.getElementById('m-peak-month').textContent = peakM;
+  document.getElementById('m-peak-month-val').textContent = maxKwh.toLocaleString() + ' kWh';
+  document.getElementById('m-low-month').textContent = lowM;
+  document.getElementById('m-low-month-val').textContent = minKwh.toLocaleString() + ' kWh';
+  document.getElementById('m-avg-month').textContent = Math.round(avgKwh).toLocaleString();
+
+  const validMonths = months.filter(m => MONTHLY_AVGS[m].kwh);
+  const mLabels = validMonths.map(m => m.replace(' 20', "'"));
+  const mKwh = validMonths.map(m => MONTHLY_AVGS[m].kwh);
+  const mEur = validMonths.map(m => MONTHLY_AVGS[m].eur);
+
+  const ctx = document.getElementById('monthlyChart').getContext('2d');
+  new Chart(ctx, {
+    data: {
+      labels: mLabels,
+      datasets: [
+        { type: 'bar', label: 'kWh', data: mKwh, backgroundColor: 'rgba(232,197,71,0.5)', borderWidth: 0, yAxisID: 'y' },
+        { type: 'line', label: 'Bill €', data: mEur, borderColor: '#5b9bd5', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#5b9bd5', tension: 0.3, fill: false, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#5e5d59', font: { size: 11 }, maxRotation: 45 }, grid: { display: false }, border: { color: '#2a2a2e' } },
+        y: { ticks: { color: '#e8c547', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false }, position: 'left' },
+        y1: { ticks: { color: '#5b9bd5', font: { size: 10 }, callback: v => '€' + v }, grid: { display: false }, border: { display: false }, position: 'right' }
+      }
+    }
+  });
+
+  const rateMonths = validMonths.filter((m,i) => mEur[i] && mKwh[i]);
+  const rates = rateMonths.map(m => +(MONTHLY_AVGS[m].eur / MONTHLY_AVGS[m].kwh).toFixed(4));
+  const rCtx = document.getElementById('rateChart').getContext('2d');
+  new Chart(rCtx, {
+    type: 'line',
+    data: {
+      labels: rateMonths.map(m => m.replace(' 20', "'")),
+      datasets: [{ data: rates, borderColor: '#e8c547', borderWidth: 1.5, pointRadius: 4, pointBackgroundColor: '#e8c547', tension: 0.3, fill: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '€' + c.parsed.y.toFixed(3) + '/kWh' } } },
+      scales: {
+        x: { ticks: { color: '#5e5d59', font: { size: 11 }, maxRotation: 45 }, grid: { display: false }, border: { color: '#2a2a2e' } },
+        y: { ticks: { color: '#5e5d59', font: { size: 10 }, callback: v => '€' + v.toFixed(3) }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
+      }
+    }
+  });
+
+  const grid = document.getElementById('monthly-cards');
+  validMonths.forEach(m => {
+    const { kwh, eur } = MONTHLY_AVGS[m];
+    const pct = Math.round(kwh / maxKwh * 100);
+    const isHigh = kwh === maxKwh;
+    const isLow = kwh === minKwh;
+    const col = isHigh ? '#e05858' : isLow ? '#4caf82' : '#e8c547';
+    grid.innerHTML += `<div class="month-card">
+      <div class="month-name">${m}</div>
+      <div class="month-kwh" style="color:${col}">${kwh.toLocaleString()} <span style="font-size:11px;font-weight:400;color:var(--text3)">kWh</span></div>
+      <div class="month-eur">€${eur}</div>
+      <div class="month-bar"><div class="month-bar-fill" style="width:${pct}%;background:${col};opacity:0.7"></div></div>
+    </div>`;
+  });
+}
+
+function initBills() {
+  const maxEur = Math.max(...BILLS.map(b => b.eur));
+  const list = document.getElementById('bill-list');
+  BILLS.slice().reverse().forEach(b => {
+    const rate = (b.eur / b.kwh).toFixed(3);
+    const pct = Math.round(b.eur / maxEur * 100);
+    const badge = b.provider === 'endesa'
+      ? '<span class="provider-badge badge-endesa">Endesa</span>'
+      : '<span class="provider-badge badge-gana">Gana Energía</span>';
+    list.innerHTML += `<div class="bill-row">
+      <div><div class="bill-period">${b.period}</div><div class="bill-provider">${badge} · ${b.days}d</div></div>
+      <div><div class="bill-bar-wrap"><div class="bill-bar" style="width:${pct}%"></div></div></div>
+      <div class="bill-kwh">${b.kwh.toLocaleString()}</div>
+      <div class="bill-eur">€${b.eur.toFixed(0)}</div>
+      <div class="bill-rate" style="color:var(--text3)">€${rate}/kWh</div>
+    </div>`;
+  });
+
+  const ctx = document.getElementById('breakdownChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Potencia', 'Energía', 'Impuestos', 'Otros'],
+      datasets: [{ data: [79.84, 131.86, 57.88, 1.42], backgroundColor: ['#5b9bd5','#e8c547','#e05858','#4caf82'], borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => c.label + ': €' + c.parsed.toFixed(2) } }
+      }
+    }
+  });
+
+  const legend = document.createElement('div');
+  legend.className = 'legend';
+  legend.style.cssText = 'margin-top:12px;justify-content:center';
+  [['Potencia','#5b9bd5'],['Energía','#e8c547'],['Impuestos','#e05858'],['Otros','#4caf82']].forEach(([l,c]) => {
+    legend.innerHTML += `<span class="legend-item"><span class="legend-dot" style="background:${c}"></span>${l}</span>`;
+  });
+  document.querySelector('#breakdownChart').parentElement.parentElement.appendChild(legend);
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+document.querySelectorAll('[data-range]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-range]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    buildDailyChart(btn.dataset.range);
+  });
+});
+
+initDailyKPIs();
+buildDailyChart('all');
+buildDistChart();
+buildEVChart();
+initMonthly();
+initBills();
+</script>
+</body>
+</html>
