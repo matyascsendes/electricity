@@ -615,7 +615,57 @@ function parseDate(s) {
   return new Date(+y, +m-1, +d);
 }
 
-const allDays = RAW_DATA.filter(r => r[2] > 0);
+const PROXY = 'https://sheets-proxy.matyas-csendes.workers.dev/';
+const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRvngnJOMlOapigcX-J4pCXR8tH3Y4bo14HMdTRWTVQhGkIS-3-xD0f37_MvA_tDW9DCKQClUeEpQMA/pub?gid=157733944&single=true&output=csv';
+const MO_NAMES = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+async function fetchSheetData() {
+  const res = await fetch(PROXY + '?url=' + encodeURIComponent(SHEET_CSV));
+  const text = await res.text();
+  const rows = text.split('\n').map(r => {
+    // handle quoted fields with commas
+    const out = []; let cur = ''; let inQ = false;
+    for (const ch of r) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { out.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out;
+  });
+
+  const headerIdx = rows.findIndex(r => r[0].trim() === 'Mo' && r[1].trim() === 'Date');
+  if (headerIdx === -1) throw new Error('Header not found');
+
+  // Parse monthly EUR from summary rows above header
+  const monthEurMap = {};
+  for (let i = 0; i < headerIdx; i++) {
+    const r = rows[i];
+    const m = r[0].trim().match(/^(\d{2}) (\w{3}) AVG$/);
+    if (m) {
+      const key = m[2] + ' 20' + m[1];
+      const eur = r[2] ? parseFloat(r[2].replace('€','').replace(',','')) : null;
+      if (eur) monthEurMap[key] = eur;
+    }
+  }
+
+  // Parse daily rows
+  const daily = [];
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    const mo = r[0] ? r[0].trim() : '';
+    const date = r[1] ? r[1].trim() : '';
+    if (!mo || !date) continue;
+    const usage = parseFloat(r[2]);
+    if (isNaN(usage) || usage <= 0) continue;
+    const ev = r[9] && r[9].trim().toLowerCase() === 'yes';
+    daily.push([mo, date, usage, ev]);
+  }
+
+  return { daily, monthEurMap };
+}
+
+let allDays = RAW_DATA.filter(r => r[2] > 0);
 
 function initDailyKPIs() {
   const junDays = allDays.filter(r => r[0] === "06 2026");
@@ -869,12 +919,43 @@ document.querySelectorAll('[data-range]').forEach(btn => {
   });
 });
 
-initDailyKPIs();
-buildDailyChart('all');
-buildDistChart();
-buildEVChart();
-initMonthly();
-initBills();
+async function initAll() {
+  try {
+    const { daily, monthEurMap } = await fetchSheetData();
+    if (daily.length > 0) {
+      allDays = daily;
+
+      // Rebuild MONTHLY_AVGS from daily data
+      const mMap = {};
+      daily.forEach(([mo,,kwh]) => {
+        const [mm, yy] = mo.split(' ');
+        const key = MO_NAMES[+mm] + ' ' + yy;
+        if (!mMap[key]) mMap[key] = { kwh: 0, eur: null };
+        mMap[key].kwh += kwh;
+      });
+      Object.keys(mMap).forEach(k => {
+        mMap[k].kwh = Math.round(mMap[k].kwh);
+        mMap[k].eur = monthEurMap[k] || null;
+      });
+      Object.keys(MONTHLY_AVGS).forEach(k => delete MONTHLY_AVGS[k]);
+      Object.assign(MONTHLY_AVGS, mMap);
+
+      const el = document.getElementById('last-updated');
+      if (el) el.textContent = 'Live · ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+    }
+  } catch(e) {
+    console.warn('Sheet fetch failed, using static data:', e);
+  }
+
+  initDailyKPIs();
+  buildDailyChart('all');
+  buildDistChart();
+  buildEVChart();
+  initMonthly();
+  initBills();
+}
+
+initAll();
 </script>
 </body>
 </html>
