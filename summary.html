@@ -3,210 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Kell Family — Summary</title>
+  <title>Utilities Summary</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #111113;
-      --surface: #1c1c1f;
-      --border: #2a2a2e;
-      --border2: #333338;
-      --text: #e8e6df;
-      --muted: #666;
-      --muted2: #444;
-      --elec: #f59e0b;
-      --elec-dim: #7a4e06;
-      --water: #60a5fa;
-      --water-dim: #1e3a5f;
-      --fixed: #9ca3af;
-      --total: #86efac;
-      --total-dim: #166534;
-      --one-time: #f87171;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 13px;
-      min-height: 100vh;
-    }
+body{font-family:'Syne',sans-serif;background:#0e0e0c;color:#e8e6df;min-height:100vh;font-size:14px;margin-left:180px}
+header{padding:28px 40px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
+.header-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+h1{font-size:26px;font-weight:700;letter-spacing:-0.5px;color:#fff}
+h1 span{color:#4ade80;font-weight:400}
+.header-meta{font-family:'DM Mono',monospace;font-size:11px;color:#555;text-align:right;line-height:1.8}
+.header-meta strong{color:#4ade80;font-size:13px}
+.content{padding:32px 40px}
+.sidenav{position:fixed;left:0;top:0;bottom:0;width:180px;background:#0a0a09;border-right:1px solid rgba(255,255,255,0.05);display:flex;flex-direction:column;z-index:100}
+.sidenav-logo{padding:20px 20px 16px;font-size:14px;font-weight:700;color:#fff;letter-spacing:-.3px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.sidenav-logo span{color:rgba(255,255,255,0.25);font-weight:400}
+.sidenav-section{padding:18px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,0.18)}
+.sidenav a{display:flex;align-items:center;gap:9px;padding:9px 20px;font-size:13px;font-weight:500;color:rgba(255,255,255,0.35);text-decoration:none;transition:color .15s,background .15s}
+.sidenav a:hover{color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.04)}
+.sidenav a.active{color:#fff;background:rgba(255,255,255,0.07)}
+.sidenav-icon{width:15px;height:15px;flex-shrink:0}
+@media(max-width:600px){body{margin-left:0}.sidenav{display:none}}
 
-    .header {
-      padding: 28px 32px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: baseline;
-      gap: 16px;
-    }
-    .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
-    .header .subtitle { color: var(--muted); font-size: 12px; }
-
-    .wrap { padding: 24px 32px; overflow-x: auto; }
-
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      min-width: 860px;
-    }
-
-    /* Group headers */
-    thead tr.g-head th {
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      padding: 0 10px 6px;
-      border-bottom: none;
-    }
-    thead tr.g-head th.g-elec  { color: var(--elec);  }
-    thead tr.g-head th.g-water { color: var(--water); }
-    thead tr.g-head th.g-fixed { color: var(--fixed); }
-    thead tr.g-head th.g-total { color: var(--total); }
-
-    /* Column headers */
-    thead tr.c-head th {
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--muted);
-      text-align: right;
-      padding: 6px 10px 10px;
-      border-bottom: 1px solid var(--border2);
-      white-space: nowrap;
-    }
-    thead tr.c-head th:first-child { text-align: left; }
-    thead tr.c-head th.h-elec  { color: var(--elec);  }
-    thead tr.c-head th.h-water { color: var(--water); }
-    thead tr.c-head th.h-fixed { color: var(--fixed); }
-    thead tr.c-head th.h-total { color: var(--total); font-size: 12px; font-weight: 600; }
-
-    tbody tr td {
-      padding: 7px 10px;
-      text-align: right;
-      border-bottom: 1px solid var(--border);
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-    tbody tr td:first-child {
-      text-align: left;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text);
-    }
-
-    .v-elec-inv { color: var(--elec); }
-    .v-elec-act { color: var(--elec-dim); font-size: 11px; }
-    .v-water-inv { color: var(--water); }
-    .v-water-act { color: var(--water-dim); font-size: 11px; }
-    .v-fixed { color: var(--fixed); }
-    .v-total { color: var(--total); font-weight: 500; }
-    .v-empty { color: var(--muted2); }
-    .v-note { color: var(--one-time); font-size: 10px; }
-
-    tbody tr.row-current {
-      background: rgba(255,255,255,0.035);
-    }
-    tbody tr.row-current td:first-child::after {
-      content: '  ·';
-      color: var(--total);
-      opacity: 0.6;
-    }
-    tbody tr.row-future td { opacity: 0.3; }
-
-    tfoot tr.totals td {
-      padding: 10px 10px;
-      border-top: 1px solid var(--border2);
-      border-bottom: none;
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      text-align: right;
-    }
-    tfoot tr.totals td:first-child {
-      text-align: left;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-    tfoot tr.totals .v-total { font-size: 13px; }
-
-    .sep { width: 12px; }
-    .sep td, .sep th { padding: 0; border: none; background: transparent; }
-
-    #loading { color: var(--muted); padding: 40px 32px; }
-    #err { color: var(--one-time); padding: 20px 32px; display: none; }
-
-    .footnote {
-      padding: 16px 32px 32px;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.6;
-      display: none;
-    }
-    .footnote span { color: var(--one-time); font-family: 'DM Mono', monospace; }
+/* Table */
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:820px;font-family:'DM Mono',monospace}
+thead tr.g-head th{font-family:'DM Mono',monospace;font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,0.18);padding:0 10px 5px;border:none;text-align:center}
+thead tr.g-head th.g-elec{color:rgba(251,191,36,0.6)}
+thead tr.g-head th.g-water{color:rgba(96,165,250,0.6)}
+thead tr.g-head th.g-fixed{color:rgba(255,255,255,0.25)}
+thead tr.g-head th.g-total{color:rgba(74,222,128,0.7)}
+thead tr.g-head th:first-child{text-align:left}
+thead tr.c-head th{font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:#444;text-align:right;padding:5px 10px 12px;border-bottom:1px solid rgba(255,255,255,0.06);white-space:nowrap}
+thead tr.c-head th:first-child{text-align:left}
+thead tr.c-head th.h-elec{color:rgba(251,191,36,0.8)}
+thead tr.c-head th.h-water{color:rgba(96,165,250,0.8)}
+thead tr.c-head th.h-fixed{color:rgba(255,255,255,0.3)}
+thead tr.c-head th.h-total{color:#4ade80;font-size:11px}
+tbody tr td{font-size:12px;padding:7px 10px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.04);white-space:nowrap}
+tbody tr td:first-child{text-align:left;font-family:'Syne',sans-serif;font-size:13px;font-weight:500;color:#e8e6df}
+tbody tr.row-current{background:rgba(255,255,255,0.03)}
+tbody tr.row-current td:first-child::after{content:' ·';color:#4ade80;opacity:.5}
+tbody tr.row-future td{opacity:.25}
+.v-elec{color:#fbbf24}
+.v-elec-dim{color:#5a3f0a}
+.v-water{color:#60a5fa}
+.v-water-dim{color:#1a3a5c}
+.v-fixed{color:#555}
+.v-total{color:#4ade80;font-weight:500}
+.v-nil{color:#2a2a28}
+tfoot tr.totals td{font-family:'DM Mono',monospace;font-size:12px;padding:12px 10px;border-top:1px solid rgba(255,255,255,0.08);border-bottom:none;text-align:right}
+tfoot tr.totals td:first-child{text-align:left;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#444}
+tfoot tr.totals .v-total{font-size:13px}
+.sep th,.sep td{width:16px;border:none!important;padding:0!important}
+.fn{margin-top:20px;font-family:'DM Mono',monospace;font-size:10px;color:#333;line-height:1.8}
+.fn span{color:#f87171}
+#loading{color:#444;font-family:'DM Mono',monospace;font-size:12px;padding:40px 0}
+#err{color:#f87171;font-family:'DM Mono',monospace;font-size:12px;padding:20px 0;display:none}
   </style>
 </head>
 <body>
+<nav class="sidenav">
+  <div class="sidenav-logo">mmmmn<span>.net</span></div>
+  <div class="sidenav-section">GG</div>
+  <a href="/gg" data-path="/gg"><svg class="sidenav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="8" width="3" height="7" rx=".5"/><rect x="6.5" y="5" width="3" height="10" rx=".5"/><rect x="12" y="2" width="3" height="13" rx=".5"/></svg>Dashboard</a>
+  <div class="sidenav-section">Plantio</div>
+  <a href="/water" data-path="/water"><svg class="sidenav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2C8 2 3 7 3 10.5C3 13.1 5.2 15 8 15s5-1.9 5-4.5C13 7 8 2 8 2z"/></svg>Water</a>
+  <a href="/electricity" data-path="/electricity"><svg class="sidenav-icon" viewBox="0 0 16 16" fill="currentColor"><polygon points="10,1 4.5,9 8,9 6,15 11.5,7 8,7"/></svg>Electricity</a>
+  <a href="/invoices" data-path="/invoices"><svg class="sidenav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2a1 1 0 011-1h6l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1V2z" opacity=".3"/><path d="M9 1v3h3M5 7h6M5 9.5h6M5 12h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>Invoices</a>
+  <a href="/summary" data-path="/summary"><svg class="sidenav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx=".5" opacity=".4"/><rect x="1" y="7" width="14" height="1.5" rx=".5" opacity=".4"/><rect x="1" y="11" width="9" height="1.5" rx=".5" opacity=".4"/><rect x="11.5" y="10" width="3.5" height="3.5" rx=".5"/></svg>Summary</a>
+</nav>
+<script>(function(){var p=window.location.pathname;document.querySelectorAll('.sidenav a').forEach(function(a){if(p.startsWith(a.getAttribute('data-path')))a.classList.add('active');});}())</script>
 
-<div class="header">
-  <h1>Kell Family Numerosa — Cost Summary</h1>
-  <div class="subtitle" id="updated-label">Loading…</div>
-</div>
+<header>
+  <div class="header-top">
+    <div>
+      <h1>Utilities Summary</h1>
+      <div style="font-family:'DM Mono',monospace;font-size:12px;color:#444;margin-top:6px">Electricity · Water · Fixed costs</div>
+    </div>
+    <div class="header-meta">
+      <div id="updated-label">—</div>
+    </div>
+  </div>
+</header>
 
-<div id="loading">Fetching bills…</div>
-<div id="err"></div>
-
-<div class="wrap" id="wrap" style="display:none">
-  <table>
-    <thead>
-      <tr class="g-head">
-        <th></th>
-        <th colspan="2" class="g-elec" style="text-align:center">Electricity</th>
-        <th class="sep"></th>
-        <th colspan="2" class="g-water" style="text-align:center">Water</th>
-        <th class="sep"></th>
-        <th colspan="4" class="g-fixed" style="text-align:center">Fixed</th>
-        <th class="sep"></th>
-        <th class="g-total"></th>
-      </tr>
-      <tr class="c-head">
-        <th>Month</th>
-        <th class="h-elec">Invoiced</th>
-        <th class="h-elec">Actual</th>
-        <th class="sep"></th>
-        <th class="h-water">Invoiced</th>
-        <th class="h-water">Actual</th>
-        <th class="sep"></th>
-        <th class="h-fixed">Verisure</th>
-        <th class="h-fixed">Caixa</th>
-        <th class="h-fixed">Tax</th>
-        <th class="h-fixed">DIGI</th>
-        <th class="sep"></th>
-        <th class="h-total">Total</th>
-      </tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-    <tfoot id="tfoot"></tfoot>
-  </table>
-</div>
-<div class="footnote" id="footnote">
-  <span>*</span> Includes one-time power upgrade fee (potencia increase): €97.30 — excluded from Electricity Invoiced.
+<div class="content">
+  <div id="loading">Loading bills…</div>
+  <div id="err"></div>
+  <div id="wrap" style="display:none">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr class="g-head">
+            <th></th>
+            <th colspan="2" class="g-elec">Electricity</th>
+            <th class="sep"></th>
+            <th colspan="2" class="g-water">Water</th>
+            <th class="sep"></th>
+            <th colspan="4" class="g-fixed">Fixed</th>
+            <th class="sep"></th>
+            <th class="g-total">Total</th>
+          </tr>
+          <tr class="c-head">
+            <th>Month</th>
+            <th class="h-elec">Invoiced</th>
+            <th class="h-elec">Actual</th>
+            <th class="sep"></th>
+            <th class="h-water">Invoiced</th>
+            <th class="h-water">Actual</th>
+            <th class="sep"></th>
+            <th class="h-fixed">Verisure</th>
+            <th class="h-fixed">Caixa</th>
+            <th class="h-fixed">Tax</th>
+            <th class="h-fixed">DIGI</th>
+            <th class="sep"></th>
+            <th class="h-total">Total</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+        <tfoot id="tfoot"></tfoot>
+      </table>
+    </div>
+    <div class="fn" id="fn" style="display:none">
+      <span>*</span> Mar 2026 includes one-time power upgrade fee (potencia increase: €97.30) — excluded from Electricity Invoiced.
+    </div>
+  </div>
 </div>
 
 <script>
 const ELEC_URL  = 'https://raw.githubusercontent.com/matyascsendes/electricity/main/data.json';
 const WATER_URL = 'https://raw.githubusercontent.com/matyascsendes/vizora/main/data.json';
-
-// One-time fees to exclude from electricity invoiced (period_start → amount)
-const ONE_TIME = { '2026-03-02': 97.30 };
-
-// Fixed cost history: [startYYYY-MM, verisure, caixa, tax, digi]
+const ONE_TIME  = { '2026-03-02': 97.30 };
 const FIXED_HIST = [
   ['2024-01', 45.2, 81.6,   0.0,  0.0],
   ['2025-01', 45.2, 81.6, 159.5,  0.0],
@@ -214,177 +141,119 @@ const FIXED_HIST = [
   ['2025-09', 63.3, 81.6, 159.5, 28.6],
   ['2025-10', 63.3, 81.6, 159.5, 31.0],
 ];
-function fixedFor(ym) {
-  let r = FIXED_HIST[0];
-  for (const row of FIXED_HIST) { if (ym >= row[0]) r = row; }
-  return { verisure: r[1], caixa: r[2], tax: r[3], digi: r[4] };
-}
+function fixedFor(ym){let r=FIXED_HIST[0];for(const row of FIXED_HIST){if(ym>=row[0])r=row;}return{verisure:r[1],caixa:r[2],tax:r[3],digi:r[4]};}
 
-// Split a bill proportionally across calendar months
-// Returns { 'YYYY-MM': amount, ... }
-function splitByMonth(start, end, total) {
-  if (!start || !end || !total) return {};
-  const d1 = new Date(start), d2 = new Date(end);
-  const totalDays = (d2 - d1) / 864e5;
-  if (totalDays <= 0) return {};
-  const out = {};
-  let cur = new Date(d1);
-  while (cur < d2) {
-    const ym = cur.toISOString().slice(0, 7);
-    const eom = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
-    const segEnd = eom < d2 ? eom : d2;
-    const days = (segEnd - cur) / 864e5;
-    out[ym] = (out[ym] || 0) + (days / totalDays) * total;
-    cur = eom;
+function splitByMonth(s,e,total){
+  if(!s||!e||!total)return{};
+  const d1=new Date(s),d2=new Date(e),td=(d2-d1)/864e5;
+  if(td<=0)return{};
+  const out={};let cur=new Date(d1);
+  while(cur<d2){
+    const ym=cur.toISOString().slice(0,7);
+    const eom=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+    const seg=eom<d2?eom:d2;
+    out[ym]=(out[ym]||0)+((seg-cur)/864e5/td)*total;
+    cur=eom;
   }
   return out;
 }
+function ym2label(ym){const[y,m]=ym.split('-');return['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m]+' '+y;}
+function fmt(v,cls){if(!v)return`<span class="v-nil">—</span>`;return`<span class="${cls}">€${v.toFixed(0)}</span>`;}
 
-function ym2label(ym) {
-  const [y, m] = ym.split('-');
-  return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m] + ' ' + y;
-}
-
-function e(v, cls, decimals = 0) {
-  if (v === null || v === undefined || v === 0) return `<span class="v-empty">—</span>`;
-  return `<span class="${cls}">€${v.toFixed(decimals)}</span>`;
-}
-
-async function main() {
-  const [er, wr] = await Promise.all([fetch(ELEC_URL), fetch(WATER_URL)]);
-  const ed = await er.json();
-  const wd = await wr.json();
-
-  const elecBills  = ed.bills.filter(b => b.period_start && b.total_eur);
-  const waterBills = wd.bills.filter(b => b.period_start && b.total_eur);
-
-  const today = new Date();
-  const todayYM = today.toISOString().slice(0,7);
-
-  // Collect months range
-  const ymSet = new Set([todayYM]);
-  [...elecBills, ...waterBills].forEach(b => {
-    const d1 = new Date(b.period_start);
-    const d2 = b.period_end ? new Date(b.period_end) : today;
-    let c = new Date(d1.getFullYear(), d1.getMonth(), 1);
-    while (c <= d2) {
-      ymSet.add(c.toISOString().slice(0,7));
-      c = new Date(c.getFullYear(), c.getMonth()+1, 1);
-    }
+async function main(){
+  const[er,wr]=await Promise.all([fetch(ELEC_URL),fetch(WATER_URL)]);
+  const ed=await er.json(),wd=await wr.json();
+  const eb=ed.bills.filter(b=>b.period_start&&b.total_eur);
+  const wb=wd.bills.filter(b=>b.period_start&&b.total_eur);
+  const today=new Date(),todayYM=today.toISOString().slice(0,7);
+  const ymSet=new Set([todayYM]);
+  [...eb,...wb].forEach(b=>{
+    const d1=new Date(b.period_start),d2=b.period_end?new Date(b.period_end):today;
+    let c=new Date(d1.getFullYear(),d1.getMonth(),1);
+    while(c<=d2){ymSet.add(c.toISOString().slice(0,7));c=new Date(c.getFullYear(),c.getMonth()+1,1);}
   });
-  const months = [...ymSet].sort().filter(ym => ym >= '2025-05');
+  const months=[...ymSet].sort().filter(ym=>ym>='2025-05');
 
-  // Invoiced maps (bill attributed to period_start month)
-  const elecInv = {}, waterInv = {};
-  elecBills.forEach(b => {
-    const ym = b.period_start.slice(0,7);
-    const adj = ONE_TIME[b.period_start] || 0;
-    elecInv[ym] = (elecInv[ym] || 0) + b.total_eur - adj;
+  const eInv={},wInv={},eAct={},wAct={};
+  eb.forEach(b=>{
+    const ym=b.period_start.slice(0,7),adj=ONE_TIME[b.period_start]||0;
+    eInv[ym]=(eInv[ym]||0)+b.total_eur-adj;
+    Object.entries(splitByMonth(b.period_start,b.period_end,b.total_eur-adj))
+      .forEach(([k,v])=>eAct[k]=(eAct[k]||0)+v);
   });
-  waterBills.forEach(b => {
-    const ym = b.period_start.slice(0,7);
-    waterInv[ym] = (waterInv[ym] || 0) + b.total_eur;
+  wb.forEach(b=>{
+    const ym=b.period_start.slice(0,7);
+    wInv[ym]=(wInv[ym]||0)+b.total_eur;
+    Object.entries(splitByMonth(b.period_start,b.period_end,b.total_eur))
+      .forEach(([k,v])=>wAct[k]=(wAct[k]||0)+v);
   });
 
-  // Actual maps (daily-rate proportional split)
-  const elecAct = {}, waterAct = {};
-  elecBills.forEach(b => {
-    const adj = ONE_TIME[b.period_start] || 0;
-    Object.entries(splitByMonth(b.period_start, b.period_end, b.total_eur - adj))
-      .forEach(([ym, v]) => elecAct[ym] = (elecAct[ym] || 0) + v);
-  });
-  waterBills.forEach(b => {
-    Object.entries(splitByMonth(b.period_start, b.period_end, b.total_eur))
-      .forEach(([ym, v]) => waterAct[ym] = (waterAct[ym] || 0) + v);
-  });
-
-  // Build rows
-  const tbody = document.getElementById('tbody');
-  let hasOneTime = false;
-  const pastYMs = months.filter(ym => ym <= todayYM);
-
-  months.forEach(ym => {
-    const isCurrent = ym === todayYM;
-    const isFuture  = ym > todayYM;
-    const hasOT = elecBills.some(b => b.period_start.slice(0,7) === ym && ONE_TIME[b.period_start]);
-    if (hasOT) hasOneTime = true;
-
-    const ei = elecInv[ym] || null;
-    const ea = elecAct[ym]  || null;
-    const wi = waterInv[ym] || null;
-    const wa = waterAct[ym] || null;
-    const fc = fixedFor(ym);
-    const total = isFuture ? null
-      : (ei||0) + (wi||0) + fc.verisure + fc.caixa + fc.tax + fc.digi;
-
-    const monthLabel = ym2label(ym) + (hasOT ? '<sup title="Includes one-time potencia fee (excluded)"> *</sup>' : '');
-
-    const tr = document.createElement('tr');
-    if (isCurrent) tr.className = 'row-current';
-    else if (isFuture) tr.className = 'row-future';
-
-    tr.innerHTML = `
-      <td>${monthLabel}</td>
-      <td class="v-elec-inv">${ei ? '€'+ei.toFixed(0) : '<span class="v-empty">—</span>'}</td>
-      <td class="v-elec-act">${ea ? '€'+ea.toFixed(0) : '<span class="v-empty">—</span>'}</td>
+  let hasOT=false;
+  const tbody=document.getElementById('tbody');
+  months.forEach(ym=>{
+    const isFuture=ym>todayYM,isCurrent=ym===todayYM;
+    const ot=eb.some(b=>b.period_start.slice(0,7)===ym&&ONE_TIME[b.period_start]);
+    if(ot)hasOT=true;
+    const ei=eInv[ym]||null,ea=eAct[ym]||null;
+    const wi=wInv[ym]||null,wa=wAct[ym]||null;
+    const fc=fixedFor(ym);
+    const total=isFuture?null:(ei||0)+(wi||0)+fc.verisure+fc.caixa+fc.tax+fc.digi;
+    const tr=document.createElement('tr');
+    if(isCurrent)tr.className='row-current';
+    else if(isFuture)tr.className='row-future';
+    tr.innerHTML=`
+      <td>${ym2label(ym)}${ot?' <sup style="color:#f87171;font-size:9px">*</sup>':''}</td>
+      <td>${fmt(ei,'v-elec')}</td>
+      <td>${fmt(ea,'v-elec-dim')}</td>
       <td class="sep"></td>
-      <td class="v-water-inv">${wi ? '€'+wi.toFixed(0) : '<span class="v-empty">—</span>'}</td>
-      <td class="v-water-act">${wa ? '€'+wa.toFixed(0) : '<span class="v-empty">—</span>'}</td>
+      <td>${fmt(wi,'v-water')}</td>
+      <td>${fmt(wa,'v-water-dim')}</td>
       <td class="sep"></td>
-      <td class="v-fixed">€${fc.verisure.toFixed(0)}</td>
-      <td class="v-fixed">€${fc.caixa.toFixed(0)}</td>
-      <td class="v-fixed">${fc.tax > 0 ? '€'+fc.tax.toFixed(0) : '<span class="v-empty">—</span>'}</td>
-      <td class="v-fixed">${fc.digi > 0 ? '€'+fc.digi.toFixed(0) : '<span class="v-empty">—</span>'}</td>
+      <td class="v-fixed">${fc.verisure?'€'+fc.verisure.toFixed(0):'<span class="v-nil">—</span>'}</td>
+      <td class="v-fixed">${fc.caixa?'€'+fc.caixa.toFixed(0):'<span class="v-nil">—</span>'}</td>
+      <td class="v-fixed">${fc.tax?'€'+fc.tax.toFixed(0):'<span class="v-nil">—</span>'}</td>
+      <td class="v-fixed">${fc.digi?'€'+fc.digi.toFixed(0):'<span class="v-nil">—</span>'}</td>
       <td class="sep"></td>
-      <td class="v-total">${total ? '€'+total.toFixed(0) : '<span class="v-empty">—</span>'}</td>
-    `;
+      <td>${fmt(total,'v-total')}</td>`;
     tbody.appendChild(tr);
   });
 
-  // Totals footer
-  let tEI=0, tEA=0, tWI=0, tWA=0, tV=0, tC=0, tT=0, tD=0;
-  pastYMs.forEach(ym => {
-    tEI += elecInv[ym] || 0;
-    tEA += elecAct[ym] || 0;
-    tWI += waterInv[ym] || 0;
-    tWA += waterAct[ym] || 0;
-    const fc = fixedFor(ym);
-    tV += fc.verisure; tC += fc.caixa; tT += fc.tax; tD += fc.digi;
+  const past=months.filter(ym=>ym<=todayYM);
+  let tEI=0,tEA=0,tWI=0,tWA=0,tV=0,tC=0,tT=0,tD=0;
+  past.forEach(ym=>{
+    tEI+=eInv[ym]||0;tEA+=eAct[ym]||0;
+    tWI+=wInv[ym]||0;tWA+=wAct[ym]||0;
+    const fc=fixedFor(ym);tV+=fc.verisure;tC+=fc.caixa;tT+=fc.tax;tD+=fc.digi;
   });
-  const tTotal = tEI + tWI + tV + tC + tT + tD;
-
-  const tfoot = document.getElementById('tfoot');
-  const tr = document.createElement('tr');
-  tr.className = 'totals';
-  tr.innerHTML = `
+  const tTotal=tEI+tWI+tV+tC+tT+tD;
+  const tf=document.getElementById('tfoot');
+  const tr=document.createElement('tr');tr.className='totals';
+  tr.innerHTML=`
     <td>Total</td>
-    <td class="v-elec-inv">€${tEI.toFixed(0)}</td>
-    <td class="v-elec-act">€${tEA.toFixed(0)}</td>
+    <td class="v-elec">€${tEI.toFixed(0)}</td>
+    <td class="v-elec-dim">€${tEA.toFixed(0)}</td>
     <td class="sep"></td>
-    <td class="v-water-inv">€${tWI.toFixed(0)}</td>
-    <td class="v-water-act">€${tWA.toFixed(0)}</td>
+    <td class="v-water">€${tWI.toFixed(0)}</td>
+    <td class="v-water-dim">€${tWA.toFixed(0)}</td>
     <td class="sep"></td>
     <td class="v-fixed">€${tV.toFixed(0)}</td>
     <td class="v-fixed">€${tC.toFixed(0)}</td>
     <td class="v-fixed">€${tT.toFixed(0)}</td>
     <td class="v-fixed">€${tD.toFixed(0)}</td>
     <td class="sep"></td>
-    <td class="v-total">€${tTotal.toFixed(0)}</td>
-  `;
-  tfoot.appendChild(tr);
+    <td class="v-total">€${tTotal.toFixed(0)}</td>`;
+  tf.appendChild(tr);
 
-  if (hasOneTime) document.getElementById('footnote').style.display = 'block';
-  document.getElementById('updated-label').textContent =
-    'Live from data.json · ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+  if(hasOT)document.getElementById('fn').style.display='';
+  document.getElementById('updated-label').textContent='Live · '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
 }
 
-main().then(() => {
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('wrap').style.display = '';
-}).catch(e => {
-  document.getElementById('loading').style.display = 'none';
-  const el = document.getElementById('err');
-  el.style.display = ''; el.textContent = 'Error: ' + e.message;
+main().then(()=>{
+  document.getElementById('loading').style.display='none';
+  document.getElementById('wrap').style.display='';
+}).catch(e=>{
+  document.getElementById('loading').style.display='none';
+  const el=document.getElementById('err');el.style.display='';el.textContent='Error: '+e.message;
 });
 </script>
 </body>
