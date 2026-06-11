@@ -358,8 +358,8 @@ const MONTHLY_AVGS = {
   "Dec 2025": { kwh: 1494, eur: 226 },
   "Jan 2026": { kwh: 2100, eur: 427 },
   "Feb 2026": { kwh: 1574, eur: 282 },
-  "Mar 2026": { kwh: 1823, eur: 329 },
-  "Apr 2026": { kwh: 1126, eur: 281 },
+  "Mar 2026": { kwh: 1698, eur: 624 },
+  "Apr 2026": { kwh: 1198, eur: 282 },
   "May 2026": { kwh: 1083, eur: 271 },
   "Jun 2026": { kwh: null, eur: null }
 };
@@ -675,9 +675,19 @@ document.querySelectorAll('[data-range]').forEach(btn => {
 
 async function initAll() {
   try {
-    const { daily, monthEurMap } = await fetchSheetData();
+    const { daily } = await fetchSheetData();
     if (daily.length > 0) {
       allDays = daily;
+
+      // Build EUR map from BILLS array (accurate per-bill data)
+      const billEurMap = {};
+      BILLS.forEach(b => {
+        const m = b.period.match(/([A-Z][a-z]{2})\s+(\d{4})/);
+        if (m) {
+          const key = m[1] + ' ' + m[2];
+          billEurMap[key] = (billEurMap[key] || 0) + b.eur;
+        }
+      });
 
       // Rebuild MONTHLY_AVGS from daily data
       const mMap = {};
@@ -689,7 +699,7 @@ async function initAll() {
       });
       Object.keys(mMap).forEach(k => {
         mMap[k].kwh = Math.round(mMap[k].kwh);
-        mMap[k].eur = monthEurMap[k] || null;
+        mMap[k].eur = billEurMap[k] ? Math.round(billEurMap[k]) : (MONTHLY_AVGS[k]?.eur || null);
       });
       Object.keys(MONTHLY_AVGS).forEach(k => delete MONTHLY_AVGS[k]);
       Object.assign(MONTHLY_AVGS, mMap);
