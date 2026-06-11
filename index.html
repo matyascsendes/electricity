@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Syne',sans-serif;background:#0e0e0c;color:#e8e6df;min-height:100vh;font-size:14px}
+body{font-family:'Syne',sans-serif;background:#0e0e0c;color:#e8e6df;min-height:100vh;font-size:14px;margin-left:180px}
 header{padding:28px 40px 0;border-bottom:1px solid rgba(255,255,255,0.06)}
 .header-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
 h1{font-size:26px;font-weight:700;letter-spacing:-0.5px;color:#fff}
@@ -74,9 +74,27 @@ h1 span{color:#4ade80;font-weight:400}
 .insight-title{font-size:13px;font-weight:600;margin-bottom:4px}
 .insight-body{font-family:'DM Mono',monospace;font-size:11px;color:#555;line-height:1.6}
 @media(max-width:768px){.kpi-grid{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}.content{padding:20px 20px}header{padding:20px 20px 0}.tabs{padding:0 20px}.bill-header,.bill-row{grid-template-columns:1fr auto auto}.bill-bar-wrap{display:none}}
+.sidenav{position:fixed;top:0;left:0;width:180px;height:100vh;background:#111110;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;z-index:100}
+.sidenav-logo{padding:20px 20px 16px;font-size:14px;font-weight:700;color:#fff;letter-spacing:-.3px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.sidenav-logo span{color:rgba(255,255,255,0.25);font-weight:400}
+.sidenav-section{padding:18px 20px 6px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,0.18)}
+.sidenav a{display:flex;align-items:center;gap:9px;padding:9px 20px;font-size:13px;font-weight:500;color:rgba(255,255,255,0.35);text-decoration:none;transition:color .15s,background .15s}
+.sidenav a:hover{color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.04)}
+.sidenav a.active{color:#fff;background:rgba(255,255,255,0.07)}
+.sidenav-icon{width:15px;height:15px;flex-shrink:0}
+@media(max-width:600px){body{margin-left:0}.sidenav{display:none}}
 </style>
 </head>
 <body>
+<nav class="sidenav">
+  <div class="sidenav-logo">mmmmn<span>.net</span></div>
+  <div class="sidenav-section">GG</div>
+  <a href="/gg" data-path="/gg"><svg class="sidenav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="8" width="3" height="7" rx=".5"/><rect x="6.5" y="5" width="3" height="10" rx=".5"/><rect x="12" y="2" width="3" height="13" rx=".5"/></svg>Dashboard</a>
+  <div class="sidenav-section">Plantio</div>
+  <a href="/water" data-path="/water"><svg class="sidenav-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2C8 2 3 7 3 10.5C3 13.1 5.2 15 8 15s5-1.9 5-4.5C13 7 8 2 8 2z"/></svg>Water</a>
+  <a href="/electricity" data-path="/electricity"><svg class="sidenav-icon" viewBox="0 0 16 16" fill="currentColor"><polygon points="10,1 4.5,9 8,9 6,15 11.5,7 8,7"/></svg>Electricity</a>
+</nav>
+<script>(function(){var p=window.location.pathname;document.querySelectorAll('.sidenav a').forEach(function(a){if(p.startsWith(a.getAttribute('data-path')))a.classList.add('active');});}());</script>
 
 <header>
   <div class="header-top">
