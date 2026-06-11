@@ -1,6 +1,13 @@
 {
   "bills": [
     {
+      "period_start": "2025-05-04",
+      "period_end": "2025-06-02",
+      "total_kwh": 11.128,
+      "total_eur": 48.32,
+      "note": "Endesa Energía 'Tarifa One Luz' bill (29 days). Effective price 0.122214 €/kWh. Consumption by period: Punta 5 kWh, Llano 5 kWh, Valle 1 kWh. Contracted power: punta-llano 8.800 kW, valle 8.800 kW. Charges breakdown: Potencia 35.53€, Energía 1.70€, Descuentos -0.34€, Otros 1.14€, Impuestos 10.29€. Daily readings (CCH) not included in bill; available via distributor i-de.es. Annual consumption 429 kWh. Payment by direct debit, charge date 13/06/2025."
+    },
+    {
       "period_start": "2025-06-02",
       "period_end": "2025-07-02",
       "total_kwh": 28.669,
