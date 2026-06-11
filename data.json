@@ -64,6 +64,13 @@
       "note": "Endesa Energía 'Tarifa One Luz' bill (mercado libre). 29-day billing period. Consumption by period: Punta 531 kWh, Llano 404 kWh, Valle 640 kWh. Average price 0.140109 €/kWh. Includes 20% promotional discount (-55.15 €). Power contracted: 8.800 kW punta-llano and valle. Daily/hourly readings (CCH) not included in bill but available via distributor (Iberdrola) website. CUPS: ES0021000008282064AZ0F. Payment by direct debit, charge date 2026-03-12."
     },
     {
+      "period_start": "2026-03-09",
+      "period_end": "2026-03-31",
+      "total_kwh": 1274.821,
+      "total_eur": 274.72,
+      "note": "Endesa Energía 'Tarifa One Luz' bill (mercado libre). Billing period 22 days. Price 0.140113 €/kWh this invoice. Consumption by period: Punta 366 kWh, Llano 353 kWh, Valle 555 kWh. Contracted power: punta-llano 14.400 kW, valle 14.400 kW. CUPS ES0021000008282064AZ0F, distributor IBERDROLA. Includes 20% promotional discount (-44.65€). Payment by direct debit, charge date 2026-04-15. Only monthly consumption history available, no daily readings. Annual consumption 10,243 kWh."
+    },
+    {
       "period_start": "2026-03-31",
       "period_end": "2026-04-16",
       "total_kwh": 652.77,
