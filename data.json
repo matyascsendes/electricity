@@ -1,6 +1,13 @@
 {
   "bills": [
     {
+      "period_start": "2025-07-02",
+      "period_end": "2025-07-31",
+      "total_kwh": 78.617,
+      "total_eur": 58.84,
+      "note": "Endesa Energía Tarifa One Luz (mercado libre). Consumo por periodos: Punta 37 kWh, Llano 23 kWh, Valle 18 kWh. Precio medio 0.122492 €/kWh. Potencias contratadas: punta-llano 8,800 kW; valle 8,800 kW. Peaje 2.0TD. Distribuidora: Iberdrola. CUPS: ES0021000008282064AZ0F. Fecha de cargo: 12/08/2025. Domiciliación bancaria. No daily readings available, only period totals."
+    },
+    {
       "period_start": "2025-07-31",
       "period_end": "2025-09-01",
       "total_kwh": 702.105,
