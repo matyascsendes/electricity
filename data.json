@@ -76,6 +76,13 @@
       "total_kwh": 545,
       "total_eur": 128.43,
       "note": "Electricity bill from Gana Energía (Gaolania Servicios S.L) for client MATYAS CSENDES, CUPS ES0021000008282064AZ. Energy consumption by period: P1=100 kWh, P2=120 kWh, P3=325 kWh (total 545 kWh). Meter 0043469599 readings (real): P1 6388→6488, P2 6657→6777, P3 5524→5849. Note billing detail uses period 2026-04-17 to 2026-05-03 (17 days) while the summary states billing period 2026-04-18 to 2026-05-03. Base imponible 106.14€, IVA 21% 22.29€. Tariff 2.0TD, contracted power P1/P2 14.4 kW. Average consumption for postal code in same period: 323.3 kWh."
+    },
+    {
+      "period_start": "2026-05-04",
+      "period_end": "2026-06-03",
+      "total_kwh": 1148,
+      "total_eur": 271.0,
+      "note": "Consumption breakdown by period: P1 230 kWh, P2 317 kWh, P3 601 kWh (total 1148 kWh over 31 days). Daily readings not available in bill. CUPS: ES0021000008282064AZ. Tarifa de acceso 2.0TD. Power: P1 14.4kW, P2 14.4kW. Distributor: IBERDROLA DISTRIBUCION ELECTRICA S.A. Meter: 0043469599. Breakdown: potencia 79.84€, energía 131.86€, otros 1.42€, impuesto eléctrico 10.85€, base imponible 223.97€, IVA 21% 47.03€. Average consumption for postal code same period: 255.79 kWh."
     }
   ]
 }
