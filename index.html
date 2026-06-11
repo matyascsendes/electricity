@@ -379,6 +379,25 @@ function estimateBill(kwh, days) {
   return (pot + energy + fixed + ie) * (1 + GANA.vat);
 }
 
+// Net energy rate (ha salido a) from bills — pure energy per kWh, no fixed/taxes
+// Endesa: ~0.1225, Jan26 transition: 0.1338, Gana Feb26+: 0.1401
+const BILL_NET_RATES = {
+  "Aug 2025": 0.1225, "Sep 2025": 0.1225, "Oct 2025": 0.1225,
+  "Nov 2025": 0.1225, "Dec 2025": 0.1225,
+  "Jan 2026": 0.1338,
+  "Feb 2026": 0.1401, "Mar 2026": 0.1401, "Apr 2026": 0.1411
+};
+// Gana net energy rate for months without a finalized bill
+const GANA_NET_RATE = GANA.energyRate * (1 - GANA.discount);
+
+// Extra potencia cost (incl. VAT) from upgrading 8.8→14.4kW on Mar 9 2026
+// Jan/Feb 2026 Gana was still 8.8kW; upgrade happened Mar 9
+const EXTRA_POT_PER_DAY = (14.4 - 8.8) * (GANA.potPeak + GANA.potValley) * (1 + GANA.vat);
+const POTENCIA_UPGRADE_DAYS = {
+  "Mar 2026": 22, // Mar 9–31
+  "Apr 2026": 30, "May 2026": 31, "Jun 2026": 30
+};
+
 function parseDate(s) {
   const [m,d,y] = s.split('/');
   return new Date(+y, +m-1, +d);
@@ -593,50 +612,80 @@ function initMonthly() {
     }
   });
 
-  // Build rate data — confirmed months use real bill, missing EUR months use Gana estimate
+  // Build rate chart: two lines
+  // netRate  = pure energy cost/kWh (ha salido a from bills, no fixed/taxes)
+  // grossAdj = total/kWh minus extra potencia cost from 8.8→14.4kW upgrade
   const now = new Date();
+  const curMonKey = MO_NAMES[now.getMonth()+1] + ' ' + now.getFullYear();
   const rateData = validMonths.map(m => {
-    const { kwh, eur } = MONTHLY_AVGS[m];
-    if (!kwh) return null;
-    if (eur) return { m, rate: +(eur / kwh).toFixed(4), est: false };
-    // Estimate using Gana tariff
     const [mon, yr] = m.split(' ');
     const mi = MO_NAMES.indexOf(mon);
     const daysInMon = new Date(+yr, mi, 0).getDate();
-    let estKwh = kwh;
-    // Current month: project full month from days elapsed
-    if (+yr === now.getFullYear() && mi === now.getMonth() + 1) {
-      const daysElapsed = allDays.filter(([mo]) => {
-        const parts = mo.split('/');
-        return +parts[2] === +yr && +parts[0] === mi;
-      }).length;
-      if (daysElapsed > 0) estKwh = Math.round(kwh / daysElapsed * daysInMon);
+    let { kwh, eur } = MONTHLY_AVGS[m];
+    if (!kwh) return null;
+    let est = false;
+    if (!eur) {
+      est = true;
+      let estKwh = kwh;
+      if (m === curMonKey) {
+        const daysElapsed = allDays.filter(([mo]) => {
+          const p = mo.split('/'); return +p[2] === +yr && +p[0] === mi;
+        }).length;
+        if (daysElapsed > 0) estKwh = Math.round(kwh / daysElapsed * daysInMon);
+      }
+      eur = estimateBill(estKwh, daysInMon);
+      kwh = estKwh;
     }
-    return { m, rate: +(estimateBill(estKwh, daysInMon) / estKwh).toFixed(4), est: true };
+    const netRate = BILL_NET_RATES[m] ?? GANA_NET_RATE;
+    const extraPot = (POTENCIA_UPGRADE_DAYS[m] ?? 0) * EXTRA_POT_PER_DAY;
+    const grossRate = (eur - extraPot) / kwh;
+    return { m, netRate: +netRate.toFixed(4), grossRate: +grossRate.toFixed(4), est };
   }).filter(Boolean);
 
   const rIsEst = rateData.map(d => d.est);
+  const rLabels = rateData.map(d => d.m.replace(' 20', "'"));
   const rCtx = document.getElementById('rateChart').getContext('2d');
   new Chart(rCtx, {
     type: 'line',
     data: {
-      labels: rateData.map(d => d.m.replace(' 20', "'")),
-      datasets: [{
-        data: rateData.map(d => d.rate),
-        borderColor: '#e8c547', borderWidth: 1.5, tension: 0.3, fill: false,
-        pointRadius: rIsEst.map(e => e ? 3 : 4),
-        pointBackgroundColor: rIsEst.map(e => e ? 'rgba(232,197,71,0.45)' : '#e8c547'),
-        segment: {
-          borderDash: ctx => rIsEst[ctx.p1DataIndex] ? [5, 4] : undefined,
-          borderColor: ctx => rIsEst[ctx.p1DataIndex] ? 'rgba(232,197,71,0.5)' : '#e8c547'
+      labels: rLabels,
+      datasets: [
+        {
+          label: 'Gross adj.',
+          data: rateData.map(d => d.grossRate),
+          borderColor: '#60a5fa', borderWidth: 1.5, tension: 0.3, fill: false,
+          pointRadius: rIsEst.map(e => e ? 3 : 4),
+          pointBackgroundColor: rIsEst.map(e => e ? 'rgba(96,165,250,0.4)' : '#60a5fa'),
+          segment: {
+            borderDash: ctx => rIsEst[ctx.p1DataIndex] ? [5, 4] : undefined,
+            borderColor: ctx => rIsEst[ctx.p1DataIndex] ? 'rgba(96,165,250,0.45)' : '#60a5fa'
+          }
+        },
+        {
+          label: 'Net energy',
+          data: rateData.map(d => d.netRate),
+          borderColor: '#4ade80', borderWidth: 1.5, tension: 0.3, fill: false,
+          pointRadius: rIsEst.map(e => e ? 3 : 4),
+          pointBackgroundColor: rIsEst.map(e => e ? 'rgba(74,222,128,0.4)' : '#4ade80'),
+          segment: {
+            borderDash: ctx => rIsEst[ctx.p1DataIndex] ? [5, 4] : undefined,
+            borderColor: ctx => rIsEst[ctx.p1DataIndex] ? 'rgba(74,222,128,0.45)' : '#4ade80'
+          }
         }
-      }]
+      ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: c => '€' + c.parsed.y.toFixed(3) + '/kWh' + (rIsEst[c.dataIndex] ? ' · est.' : '') } }
+        legend: {
+          display: true,
+          labels: { color: '#5e5d59', font: { size: 11 }, boxWidth: 24, padding: 16 }
+        },
+        tooltip: {
+          callbacks: {
+            label: c => c.dataset.label + ': €' + c.parsed.y.toFixed(3) + '/kWh' + (rIsEst[c.dataIndex] ? ' · est.' : '')
+          }
+        }
       },
       scales: {
         x: { ticks: { color: '#5e5d59', font: { size: 11 }, maxRotation: 45 }, grid: { display: false }, border: { color: '#2a2a2e' } },
