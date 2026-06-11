@@ -360,9 +360,24 @@ const MONTHLY_AVGS = {
   "Feb 2026": { kwh: 1574, eur: 282 },
   "Mar 2026": { kwh: 1698, eur: 624 },
   "Apr 2026": { kwh: 1198, eur: 282 },
-  "May 2026": { kwh: 1083, eur: 271 },
+  "May 2026": { kwh: 1083, eur: null },
   "Jun 2026": { kwh: null, eur: null }
 };
+
+// Gana Energía tariff (from bills through Apr 2026)
+const GANA = {
+  energyRate: 0.176389, discount: 0.20,
+  potKW: 14.4, potPeak: 0.111790, potValley: 0.033880,
+  bono: 0.019121, contador: 0.026630,
+  ieCIM: 1.00, vat: 0.21
+};
+function estimateBill(kwh, days) {
+  const pot = GANA.potKW * (GANA.potPeak + GANA.potValley) * days;
+  const energy = kwh * GANA.energyRate * (1 - GANA.discount);
+  const fixed = (GANA.bono + GANA.contador) * days;
+  const ie = (kwh / 1000) * GANA.ieCIM;
+  return (pot + energy + fixed + ie) * (1 + GANA.vat);
+}
 
 function parseDate(s) {
   const [m,d,y] = s.split('/');
@@ -578,18 +593,51 @@ function initMonthly() {
     }
   });
 
-  const rateMonths = validMonths.filter((m,i) => mEur[i] && mKwh[i]);
-  const rates = rateMonths.map(m => +(MONTHLY_AVGS[m].eur / MONTHLY_AVGS[m].kwh).toFixed(4));
+  // Build rate data — confirmed months use real bill, missing EUR months use Gana estimate
+  const now = new Date();
+  const rateData = validMonths.map(m => {
+    const { kwh, eur } = MONTHLY_AVGS[m];
+    if (!kwh) return null;
+    if (eur) return { m, rate: +(eur / kwh).toFixed(4), est: false };
+    // Estimate using Gana tariff
+    const [mon, yr] = m.split(' ');
+    const mi = MO_NAMES.indexOf(mon);
+    const daysInMon = new Date(+yr, mi, 0).getDate();
+    let estKwh = kwh;
+    // Current month: project full month from days elapsed
+    if (+yr === now.getFullYear() && mi === now.getMonth() + 1) {
+      const daysElapsed = allDays.filter(([mo]) => {
+        const parts = mo.split('/');
+        return +parts[2] === +yr && +parts[0] === mi;
+      }).length;
+      if (daysElapsed > 0) estKwh = Math.round(kwh / daysElapsed * daysInMon);
+    }
+    return { m, rate: +(estimateBill(estKwh, daysInMon) / estKwh).toFixed(4), est: true };
+  }).filter(Boolean);
+
+  const rIsEst = rateData.map(d => d.est);
   const rCtx = document.getElementById('rateChart').getContext('2d');
   new Chart(rCtx, {
     type: 'line',
     data: {
-      labels: rateMonths.map(m => m.replace(' 20', "'")),
-      datasets: [{ data: rates, borderColor: '#e8c547', borderWidth: 1.5, pointRadius: 4, pointBackgroundColor: '#e8c547', tension: 0.3, fill: false }]
+      labels: rateData.map(d => d.m.replace(' 20', "'")),
+      datasets: [{
+        data: rateData.map(d => d.rate),
+        borderColor: '#e8c547', borderWidth: 1.5, tension: 0.3, fill: false,
+        pointRadius: rIsEst.map(e => e ? 3 : 4),
+        pointBackgroundColor: rIsEst.map(e => e ? 'rgba(232,197,71,0.45)' : '#e8c547'),
+        segment: {
+          borderDash: ctx => rIsEst[ctx.p1DataIndex] ? [5, 4] : undefined,
+          borderColor: ctx => rIsEst[ctx.p1DataIndex] ? 'rgba(232,197,71,0.5)' : '#e8c547'
+        }
+      }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '€' + c.parsed.y.toFixed(3) + '/kWh' } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => '€' + c.parsed.y.toFixed(3) + '/kWh' + (rIsEst[c.dataIndex] ? ' · est.' : '') } }
+      },
       scales: {
         x: { ticks: { color: '#5e5d59', font: { size: 11 }, maxRotation: 45 }, grid: { display: false }, border: { color: '#2a2a2e' } },
         y: { ticks: { color: '#5e5d59', font: { size: 10 }, callback: v => '€' + v.toFixed(3) }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
