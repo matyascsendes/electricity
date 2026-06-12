@@ -43,7 +43,9 @@ thead tr.c-head th.h-fixed{color:rgba(255,255,255,0.3)}
 thead tr.c-head th.h-total{color:#4ade80;font-size:11px}
 tbody tr td{font-size:12px;padding:7px 10px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.04);white-space:nowrap}
 tbody tr td:first-child{text-align:left;font-family:'Syne',sans-serif;font-size:13px;font-weight:500;color:#e8e6df}
-tbody tr.row-current{background:rgba(255,255,255,0.03)}
+tbody tr:nth-child(odd){background:#0e0e0c}
+tbody tr:nth-child(even){background:#161614}
+tbody tr.row-current{background:#1e1e1c!important}
 tbody tr.row-current td:first-child::after{content:' ·';color:#4ade80;opacity:.5}
 tbody tr.row-future td{opacity:.25}
 .v-elec{color:#fbbf24}
