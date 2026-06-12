@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Utilities Summary</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230e0e0c'/%3E%3Crect x='4' y='8' width='24' height='3' rx='1' fill='%234ade80' opacity='.4'/%3E%3Crect x='4' y='14.5' width='24' height='3' rx='1' fill='%234ade80' opacity='.4'/%3E%3Crect x='4' y='21' width='15' height='3' rx='1' fill='%234ade80' opacity='.4'/%3E%3Crect x='21' y='19' width='7' height='7' rx='1.5' fill='%234ade80'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -50,11 +51,12 @@ tbody tr.row-future td{opacity:.25}
 .v-water{color:#60a5fa}
 .v-water-dim{color:#4585c4}
 .v-fixed{color:#6b7280}
-.v-total{color:#4ade80;font-weight:500}
+.v-total{background:#4ade80;color:#0a0a09;font-weight:700;border-radius:4px;padding:2px 7px}
 .v-nil{color:#2a2a28}
+td.col-total,th.col-total{background:rgba(74,222,128,0.07)}
 tfoot tr.totals td{font-family:'DM Mono',monospace;font-size:12px;padding:12px 10px;border-top:1px solid rgba(255,255,255,0.08);border-bottom:none;text-align:right}
 tfoot tr.totals td:first-child{text-align:left;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#444}
-tfoot tr.totals .v-total{font-size:13px}
+tfoot tr.totals td.col-total{background:rgba(74,222,128,0.12)}
 .sep th,.sep td{width:16px;border:none!important;padding:0!important}
 .fn{margin-top:20px;font-family:'DM Mono',monospace;font-size:10px;color:#333;line-height:1.8}
 .fn span{color:#f87171}
@@ -102,7 +104,7 @@ tfoot tr.totals .v-total{font-size:13px}
             <th class="sep"></th>
             <th colspan="4" class="g-fixed">Fixed</th>
             <th class="sep"></th>
-            <th class="g-total">Total</th>
+            <th class="g-total col-total">Avg/mo</th>
           </tr>
           <tr class="c-head">
             <th>Month</th>
@@ -117,7 +119,7 @@ tfoot tr.totals .v-total{font-size:13px}
             <th class="h-fixed">Tax</th>
             <th class="h-fixed">DIGI</th>
             <th class="sep"></th>
-            <th class="h-total">Total</th>
+            <th class="h-total col-total">Avg/mo</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -172,7 +174,7 @@ async function main(){
     let c=new Date(d1.getFullYear(),d1.getMonth(),1);
     while(c<=d2){ymSet.add(c.toISOString().slice(0,7));c=new Date(c.getFullYear(),c.getMonth()+1,1);}
   });
-  const months=[...ymSet].sort().filter(ym=>ym>='2025-05');
+  const months=[...ymSet].sort().filter(ym=>ym>='2025-09');
 
   const eInv={},wInv={},eAct={},wAct={};
   eb.forEach(b=>{
@@ -214,34 +216,35 @@ async function main(){
       <td class="v-fixed">${fc.tax?'€'+fc.tax.toFixed(0):'<span class="v-nil">—</span>'}</td>
       <td class="v-fixed">${fc.digi?'€'+fc.digi.toFixed(0):'<span class="v-nil">—</span>'}</td>
       <td class="sep"></td>
-      <td>${fmt(total,'v-total')}</td>`;
+      <td class="col-total">${fmt(total,'v-total')}</td>`;
     tbody.appendChild(tr);
   });
 
   const past=months.filter(ym=>ym<=todayYM);
+  const n=past.length||1;
   let tEI=0,tEA=0,tWI=0,tWA=0,tV=0,tC=0,tT=0,tD=0;
   past.forEach(ym=>{
     tEI+=eInv[ym]||0;tEA+=eAct[ym]||0;
     tWI+=wInv[ym]||0;tWA+=wAct[ym]||0;
     const fc=fixedFor(ym);tV+=fc.verisure;tC+=fc.caixa;tT+=fc.tax;tD+=fc.digi;
   });
-  const tTotal=tEI+tWI+tV+tC+tT+tD;
+  const avgTotal=(tEI+tWI+tV+tC+tT+tD)/n;
   const tf=document.getElementById('tfoot');
   const tr=document.createElement('tr');tr.className='totals';
   tr.innerHTML=`
-    <td>Total</td>
-    <td class="v-elec">€${tEI.toFixed(0)}</td>
-    <td class="v-elec-dim">€${tEA.toFixed(0)}</td>
+    <td>Avg/mo</td>
+    <td class="v-elec">€${(tEI/n).toFixed(0)}</td>
+    <td class="v-elec-dim">€${(tEA/n).toFixed(0)}</td>
     <td class="sep"></td>
-    <td class="v-water">€${tWI.toFixed(0)}</td>
-    <td class="v-water-dim">€${tWA.toFixed(0)}</td>
+    <td class="v-water">€${(tWI/n).toFixed(0)}</td>
+    <td class="v-water-dim">€${(tWA/n).toFixed(0)}</td>
     <td class="sep"></td>
-    <td class="v-fixed">€${tV.toFixed(0)}</td>
-    <td class="v-fixed">€${tC.toFixed(0)}</td>
-    <td class="v-fixed">€${tT.toFixed(0)}</td>
-    <td class="v-fixed">€${tD.toFixed(0)}</td>
+    <td class="v-fixed">€${(tV/n).toFixed(0)}</td>
+    <td class="v-fixed">€${(tC/n).toFixed(0)}</td>
+    <td class="v-fixed">€${(tT/n).toFixed(0)}</td>
+    <td class="v-fixed">€${(tD/n).toFixed(0)}</td>
     <td class="sep"></td>
-    <td class="v-total">€${tTotal.toFixed(0)}</td>`;
+    <td class="col-total"><span class="v-total">€${avgTotal.toFixed(0)}</span></td>`;
   tf.appendChild(tr);
 
   if(hasOT)document.getElementById('fn').style.display='';
