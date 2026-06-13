@@ -168,7 +168,7 @@ h1 span{color:#4ade80;font-weight:400}
       </div>
       <div class="legend">
         <span class="legend-item"><span class="legend-dot" style="background:#e8c547"></span> kWh/day</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#4caf82; opacity:0.6"></span> 7-day avg</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#fbbf24; opacity:0.8"></span> 7-day avg</span>
         <span class="legend-item"><span class="legend-dot" style="background:#e05858; opacity:0.5"></span> EV charging day</span>
       </div>
       <div style="position:relative;height:260px;">
@@ -505,7 +505,7 @@ function buildDailyChart(range) {
       labels,
       datasets: [
         { label: 'kWh', data: vals, backgroundColor: barColors, borderWidth: 0, order: 2 },
-        { label: '7d avg', data: movAvg, type: 'line', borderColor: 'rgba(96,165,250,0.7)', borderWidth: 1.5, pointRadius: 0, tension: 0.4, fill: false, order: 1 }
+        { label: '7d avg', data: movAvg, type: 'line', borderColor: 'rgba(251,191,36,0.8)', borderWidth: 1.5, pointRadius: 0, tension: 0.4, fill: false, order: 1 }
       ]
     },
     options: {
