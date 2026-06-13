@@ -161,9 +161,9 @@ h1 span{color:#4ade80;font-weight:400}
           <div class="chart-sub">kWh per day, all available data</div>
         </div>
         <div class="filter-row">
-          <button class="filter-btn active" data-range="all">All</button>
+          <button class="filter-btn" data-range="all">All</button>
           <button class="filter-btn" data-range="90">90d</button>
-          <button class="filter-btn" data-range="30">30d</button>
+          <button class="filter-btn active" data-range="30">30d</button>
         </div>
       </div>
       <div class="legend">
@@ -812,7 +812,7 @@ async function initAll() {
   }
 
   initDailyKPIs();
-  buildDailyChart('all');
+  buildDailyChart('30');
   buildDistChart();
   buildEVChart();
   initMonthly();
