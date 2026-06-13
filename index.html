@@ -180,12 +180,12 @@ h1 span{color:#4ade80;font-weight:400}
       <div class="chart-card" style="margin-bottom:0">
         <div class="chart-header">
           <div>
-            <div class="chart-title">Distribution</div>
-            <div class="chart-sub">Day buckets by kWh range</div>
+            <div class="chart-title">Punta / Llano / Valle</div>
+            <div class="chart-sub">Jan 2026 · Endesa invoice</div>
           </div>
         </div>
         <div style="position:relative;height:200px;">
-          <canvas id="distChart" role="img" aria-label="Distribution of daily consumption values"></canvas>
+          <canvas id="distChart" role="img" aria-label="Punta Llano Valle kWh breakdown"></canvas>
         </div>
       </div>
       <div class="chart-card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:200px">
@@ -524,21 +524,42 @@ function buildDailyChart(range) {
 }
 
 function buildDistChart() {
-  const vals = allDays.map(r => r[2]);
-  const buckets = [[0,10],[10,20],[20,30],[30,40],[40,50],[50,60],[60,70],[70,80],[80,100]];
-  const counts = buckets.map(([lo,hi]) => vals.filter(v => v >= lo && v < hi).length);
-  const labels = buckets.map(([lo,hi]) => lo + '–' + hi);
+  // Punta/Llano/Valle from latest Endesa invoice (Jan 2026, P26CON004962291)
+  const plvData = { Punta: 617, Llano: 522, Valle: 961 };
+  const total = 617 + 522 + 961;
+  const labels = Object.keys(plvData);
+  const values = Object.values(plvData);
+  const colors = ['rgba(251,146,60,0.8)', 'rgba(250,204,21,0.8)', 'rgba(74,222,128,0.8)'];
 
   const ctx = document.getElementById('distChart').getContext('2d');
   new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: [{ data: counts, backgroundColor: 'rgba(91,155,213,0.6)', borderWidth: 0 }] },
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderWidth: 0,
+        borderRadius: 4
+      }]
+    },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.raw} kWh (${(ctx.raw/total*100).toFixed(1)}%)`
+          }
+        }
+      },
       scales: {
-        x: { ticks: { color: '#5e5d59', font: { size: 10 }, maxRotation: 45 }, grid: { display: false }, border: { color: '#2a2a2e' } },
-        y: { ticks: { color: '#5e5d59', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
+        x: { ticks: { color: '#9ca3af', font: { size: 13, weight: '600' } }, grid: { display: false }, border: { color: '#2a2a2e' } },
+        y: {
+          ticks: { color: '#5e5d59', font: { size: 10 }, callback: v => v + ' kWh' },
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          border: { display: false }
+        }
       }
     }
   });
