@@ -188,16 +188,10 @@ h1 span{color:#4ade80;font-weight:400}
           <canvas id="distChart" role="img" aria-label="Distribution of daily consumption values"></canvas>
         </div>
       </div>
-      <div class="chart-card" style="margin-bottom:0">
-        <div class="chart-header">
-          <div>
-            <div class="chart-title">EV charging</div>
-            <div class="chart-sub">Days flagged as charging vs baseline</div>
-          </div>
-        </div>
-        <div style="position:relative;height:200px;">
-          <canvas id="evChart" role="img" aria-label="EV charging days vs non-EV days average"></canvas>
-        </div>
+      <div class="chart-card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:200px">
+        <div class="chart-sub" style="margin-bottom:8px">EV SHARE OF TOTAL</div>
+        <div id="ev-pct" style="font-size:4rem;font-weight:700;color:#fff;line-height:1;letter-spacing:-2px">—</div>
+        <div id="ev-sub" class="chart-sub" style="margin-top:10px">since Jun 6</div>
       </div>
     </div>
   </div>
@@ -333,7 +327,7 @@ const RAW_DATA = [
   ["03 2026","3/1/2026",56.2,false],["03 2026","3/2/2026",61.8,false],["03 2026","3/3/2026",49.3,false],["03 2026","3/4/2026",55.7,false],["03 2026","3/5/2026",63.4,false],["03 2026","3/6/2026",52.4,false],["03 2026","3/7/2026",58.9,false],["03 2026","3/8/2026",65.3,false],["03 2026","3/9/2026",52.4,false],["03 2026","3/10/2026",60.2,false],["03 2026","3/11/2026",54.8,false],["03 2026","3/12/2026",58.3,false],["03 2026","3/13/2026",45.6,false],["03 2026","3/14/2026",52.4,false],["03 2026","3/15/2026",52.7,false],["03 2026","3/16/2026",25.5,false],["03 2026","3/17/2026",66.3,false],["03 2026","3/18/2026",55.7,false],["03 2026","3/19/2026",49.3,false],["03 2026","3/20/2026",49.0,false],["03 2026","3/21/2026",91.6,true],["03 2026","3/22/2026",49.2,false],["03 2026","3/23/2026",46.5,false],["03 2026","3/24/2026",63.6,false],["03 2026","3/25/2026",45.6,false],["03 2026","3/26/2026",46.2,false],["03 2026","3/27/2026",65.5,false],["03 2026","3/28/2026",42.9,false],["03 2026","3/29/2026",76.1,false],["03 2026","3/30/2026",49.9,false],["03 2026","3/31/2026",53.4,false],
   ["04 2026","4/1/2026",55.0,false],["04 2026","4/2/2026",47.5,false],["04 2026","4/3/2026",40.1,false],["04 2026","4/4/2026",45.7,false],["04 2026","4/5/2026",70.1,false],["04 2026","4/6/2026",58.6,false],["04 2026","4/7/2026",55.5,false],["04 2026","4/8/2026",48.2,false],["04 2026","4/9/2026",46.7,false],["04 2026","4/10/2026",9.1,false],["04 2026","4/11/2026",4.6,false],["04 2026","4/12/2026",35.5,false],["04 2026","4/13/2026",43.0,false],["04 2026","4/14/2026",28.9,false],["04 2026","4/15/2026",22.7,false],["04 2026","4/16/2026",40.0,false],["04 2026","4/17/2026",41.6,false],["04 2026","4/18/2026",20.2,false],["04 2026","4/19/2026",26.3,false],["04 2026","4/20/2026",22.5,false],["04 2026","4/21/2026",47.1,false],["04 2026","4/22/2026",20.4,false],["04 2026","4/23/2026",25.6,false],["04 2026","4/24/2026",46.2,true],["04 2026","4/25/2026",47.0,true],["04 2026","4/26/2026",61.5,false],["04 2026","4/27/2026",23.0,false],["04 2026","4/28/2026",21.1,false],["04 2026","4/29/2026",49.0,false],["04 2026","4/30/2026",23.5,false],
   ["05 2026","5/1/2026",26.2,false],["05 2026","5/2/2026",19.9,false],["05 2026","5/3/2026",22.8,false],["05 2026","5/4/2026",20.8,false],["05 2026","5/5/2026",39.0,false],["05 2026","5/6/2026",19.2,false],["05 2026","5/7/2026",20.7,false],["05 2026","5/8/2026",42.4,false],["05 2026","5/9/2026",21.1,false],["05 2026","5/10/2026",56.1,false],["05 2026","5/11/2026",27.7,false],["05 2026","5/12/2026",24.5,false],["05 2026","5/13/2026",18.3,false],["05 2026","5/14/2026",40.5,false],["05 2026","5/15/2026",27.7,false],["05 2026","5/16/2026",50.0,false],["05 2026","5/17/2026",34.5,false],["05 2026","5/18/2026",28.4,false],["05 2026","5/19/2026",51.8,false],["05 2026","5/20/2026",48.9,false],["05 2026","5/21/2026",45.3,false],["05 2026","5/22/2026",56.0,false],["05 2026","5/23/2026",36.4,false],["05 2026","5/24/2026",36.0,false],["05 2026","5/25/2026",20.0,false],["05 2026","5/26/2026",50.6,false],["05 2026","5/27/2026",46.3,false],["05 2026","5/28/2026",25.3,false],["05 2026","5/29/2026",50.0,false],["05 2026","5/30/2026",28.7,false],["05 2026","5/31/2026",49.4,false],
-  ["06 2026","6/1/2026",49.4,false],["06 2026","6/2/2026",55.6,false],["06 2026","6/3/2026",54.4,false],["06 2026","6/4/2026",56.3,false],["06 2026","6/5/2026",22.1,false],["06 2026","6/6/2026",64.3,false],["06 2026","6/7/2026",52.1,false],["06 2026","6/8/2026",24.0,false]
+  ["06 2026","6/1/2026",49.4,false],["06 2026","6/2/2026",55.6,false],["06 2026","6/3/2026",54.4,false],["06 2026","6/4/2026",56.3,false],["06 2026","6/5/2026",22.1,false],["06 2026","6/6/2026",64.3,false],["06 2026","6/7/2026",52.1,true],["06 2026","6/8/2026",24.0,false],["06 2026","6/9/2026",21.7,false],["06 2026","6/10/2026",23.4,false],["06 2026","6/11/2026",15.4,false],["06 2026","6/12/2026",21.7,false],["06 2026","6/13/2026",0,true]
 ];
 
 const BILLS = [
@@ -550,28 +544,27 @@ function buildDistChart() {
   });
 }
 
-function buildEVChart() {
-  const evDays = allDays.filter(r => r[3]);
-  const noEvDays = allDays.filter(r => !r[3]);
-  const evAvg = evDays.reduce((a,r) => a+r[2], 0) / evDays.length;
-  const noEvAvg = noEvDays.reduce((a,r) => a+r[2], 0) / noEvDays.length;
+// EV charger cumulative meter readings (date → kWh)
+const EV_READINGS = [
+  ["6/7/2026", 72.89],
+  ["6/13/2026", 130.49]
+];
+const EV_START = "6/6/2026";
 
-  const ctx = document.getElementById('evChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: ['No EV charging', 'EV charging day'],
-      datasets: [{ data: [+noEvAvg.toFixed(1), +evAvg.toFixed(1)], backgroundColor: ['rgba(76,175,130,0.6)','rgba(224,88,88,0.6)'], borderWidth: 0 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.x.toFixed(1) + ' kWh avg' } } },
-      scales: {
-        x: { ticks: { color: '#5e5d59', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } },
-        y: { ticks: { color: '#9b9a95', font: { size: 12 } }, grid: { display: false }, border: { color: '#2a2a2e' } }
-      }
-    }
-  });
+function buildEVChart() {
+  const evTotal = EV_READINGS[EV_READINGS.length - 1][1];
+  const lastDate = EV_READINGS[EV_READINGS.length - 1][0];
+
+  // Total house consumption from EV_START
+  const startIdx = allDays.findIndex(r => r[1] === EV_START);
+  const sinceStart = startIdx >= 0 ? allDays.slice(startIdx) : [];
+  const totalKwh = sinceStart.reduce((a, r) => a + r[2], 0);
+
+  const pct = totalKwh > 0 ? (evTotal / totalKwh * 100) : 0;
+
+  document.getElementById('ev-pct').textContent = pct.toFixed(1) + '%';
+  document.getElementById('ev-sub').textContent =
+    `${evTotal} kWh EV / ${totalKwh.toFixed(0)} kWh total · since Jun 6 · last reading ${lastDate}`;
 }
 
 function initMonthly() {
