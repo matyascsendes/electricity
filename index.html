@@ -556,7 +556,7 @@ function buildDistChart() {
             color: '#9ca3af', font: { size: 11 }, boxWidth: 10, padding: 10,
             generateLabels: chart => plv.map((d,i)=>({
               text: `${d.label} · ${d.sub}  ${d.kwh} kWh (${(d.kwh/total*100).toFixed(0)}%)`,
-              fillStyle: d.color, strokeStyle: 'transparent', index: i
+              fillStyle: d.color, strokeStyle: 'transparent', fontColor: '#e5e7eb', index: i
             }))
           }
         },
