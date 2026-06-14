@@ -525,40 +525,45 @@ function buildDailyChart(range) {
 
 function buildDistChart() {
   // Punta/Llano/Valle from latest Endesa invoice (Jan 2026, P26CON004962291)
-  const plvData = { Punta: 617, Llano: 522, Valle: 961 };
-  const total = 617 + 522 + 961;
-  const labels = Object.keys(plvData);
-  const values = Object.values(plvData);
-  const colors = ['rgba(251,146,60,0.8)', 'rgba(250,204,21,0.8)', 'rgba(74,222,128,0.8)'];
+  const plv = [
+    { label: 'Punta',  sub: 'Peak',     kwh: 617,  color: '#f87171' },
+    { label: 'Llano',  sub: 'Mid',      kwh: 522,  color: '#fbbf24' },
+    { label: 'Valle',  sub: 'Off-peak', kwh: 961,  color: '#4ade80' },
+  ];
+  const total = plv.reduce((s,d)=>s+d.kwh,0);
 
   const ctx = document.getElementById('distChart').getContext('2d');
   new Chart(ctx, {
-    type: 'bar',
+    type: 'doughnut',
     data: {
-      labels,
+      labels: plv.map(d=>`${d.label} · ${d.sub}`),
       datasets: [{
-        data: values,
-        backgroundColor: colors,
-        borderWidth: 0,
-        borderRadius: 4
+        data: plv.map(d=>d.kwh),
+        backgroundColor: plv.map(d=>d.color),
+        borderColor: '#161614',
+        borderWidth: 3,
+        hoverOffset: 6
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
       plugins: {
-        legend: { display: false },
+        legend: {
+          display: true,
+          position: 'right',
+          labels: {
+            color: '#9ca3af', font: { size: 11 }, boxWidth: 10, padding: 10,
+            generateLabels: chart => plv.map((d,i)=>({
+              text: `${d.label} · ${d.sub}  ${d.kwh} kWh (${(d.kwh/total*100).toFixed(0)}%)`,
+              fillStyle: d.color, strokeStyle: 'transparent', index: i
+            }))
+          }
+        },
         tooltip: {
           callbacks: {
-            label: ctx => ` ${ctx.raw} kWh (${(ctx.raw/total*100).toFixed(1)}%)`
+            label: item => ` ${plv[item.dataIndex].kwh} kWh · ${(plv[item.dataIndex].kwh/total*100).toFixed(1)}%`
           }
-        }
-      },
-      scales: {
-        x: { ticks: { color: '#9ca3af', font: { size: 13, weight: '600' } }, grid: { display: false }, border: { color: '#2a2a2e' } },
-        y: {
-          ticks: { color: '#5e5d59', font: { size: 10 }, callback: v => v + ' kWh' },
-          grid: { color: 'rgba(255,255,255,0.04)' },
-          border: { display: false }
         }
       }
     }
