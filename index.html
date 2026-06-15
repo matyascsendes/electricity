@@ -114,6 +114,7 @@ h1 span{color:#4ade80;font-weight:400}
 <div class="tabs">
   <div class="tab active" data-tab="daily">Napi fogyasztás</div>
   <div class="tab" data-tab="monthly">Havi trendek</div>
+  <div class="tab" data-tab="hourly">Óránkénti</div>
   <div class="tab" data-tab="bills">Számlák</div>
 </div>
 
@@ -249,6 +250,59 @@ h1 span{color:#4ade80;font-weight:400}
       </div>
       <div style="position:relative;height:200px;">
         <canvas id="rateChart" role="img" aria-label="Effective electricity rate over time"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOURLY TAB -->
+  <div class="tab-panel" id="tab-hourly">
+    <div class="two-col" style="margin-bottom:20px">
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Avg. consumption by hour</div>
+            <div class="chart-sub">Jan–Jun 2026 · color = tariff zone</div>
+          </div>
+        </div>
+        <div style="position:relative;height:240px">
+          <canvas id="hourlyChart"></canvas>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:#6b7280">
+          <span><span style="color:#f87171">■</span> Punta (peak) · 10–14h, 18–22h</span>
+          <span><span style="color:#fbbf24">■</span> Llano (mid) · 8–10h, 14–18h, 22–24h</span>
+          <span><span style="color:#4ade80">■</span> Valle (off-peak) · 0–8h + weekends</span>
+        </div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Monthly Punta / Llano / Valle</div>
+            <div class="chart-sub">kWh per tariff zone per month</div>
+          </div>
+        </div>
+        <div style="position:relative;height:240px">
+          <canvas id="monthlyPlvChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title" style="margin-bottom:16px">Insights</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div style="background:#1a1a18;border-radius:8px;padding:14px">
+          <div style="font-size:10px;letter-spacing:1px;color:#6b7280;margin-bottom:6px">EVENING PEAK</div>
+          <div style="font-size:1.5rem;font-weight:700;color:#f87171">20–21h</div>
+          <div style="font-size:12px;color:#9ca3af;margin-top:4px">3.4–3.6 kWh/day avg — Punta zone, most expensive</div>
+        </div>
+        <div style="background:#1a1a18;border-radius:8px;padding:14px">
+          <div style="font-size:10px;letter-spacing:1px;color:#6b7280;margin-bottom:6px">NIGHT MYSTERY</div>
+          <div style="font-size:1.5rem;font-weight:700;color:#fbbf24">1–3h</div>
+          <div style="font-size:12px;color:#9ca3af;margin-top:4px">1.4–1.9 kWh/day avg at night — pump, fridge, or AC on standby?</div>
+        </div>
+        <div style="background:#1a1a18;border-radius:8px;padding:14px">
+          <div style="font-size:10px;letter-spacing:1px;color:#6b7280;margin-bottom:6px">TREND: PUNTA ↓</div>
+          <div style="font-size:1.5rem;font-weight:700;color:#4ade80">−71%</div>
+          <div style="font-size:12px;color:#9ca3af;margin-top:4px">Punta usage: 648 kWh (Jan) → 185 kWh (May) — great improvement</div>
+        </div>
       </div>
     </div>
   </div>
@@ -775,12 +829,76 @@ function initBills() {
   document.querySelector('#breakdownChart').parentElement.parentElement.appendChild(legend);
 }
 
+function buildHourlyCharts() {
+  // Avg kWh per hour (Jan–Jun 2026, 164 days)
+  const AVG_HOUR = [1.926,1.590,1.450,1.406,1.181,1.123,0.998,1.381,2.203,2.287,2.049,1.979,1.850,2.282,2.463,2.079,1.776,1.901,2.193,3.318,3.598,2.863,3.064,2.336];
+  // tariff zone per hora (1-indexed): P=punta, L=llano, V=valle (weekday avg; weekends are valle but data is mixed)
+  const ZONE = ['V','V','V','V','V','V','V','V','L','L','P','P','P','P','L','L','L','L','P','P','P','P','L','L'];
+  const ZONE_COLOR = {P:'rgba(248,113,113,0.85)',L:'rgba(251,191,36,0.85)',V:'rgba(74,222,128,0.85)'};
+
+  const hLabels = Array.from({length:24},(_,i)=>`${i}h`);
+  new Chart(document.getElementById('hourlyChart'), {
+    type:'bar',
+    data:{
+      labels: hLabels,
+      datasets:[{
+        data: AVG_HOUR,
+        backgroundColor: ZONE.map(z=>ZONE_COLOR[z]),
+        borderWidth:0, borderRadius:3
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label: c=>' '+c.raw.toFixed(3)+' kWh avg'}}
+      },
+      scales:{
+        x:{ticks:{color:'#6b7280',font:{size:10}},grid:{display:false},border:{color:'#2a2a2e'}},
+        y:{ticks:{color:'#5e5d59',font:{size:10},callback:v=>v+' kWh'},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}}
+      }
+    }
+  });
+
+  // Monthly PLV stacked bar
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun'];
+  const PLV = {
+    punta: [648.1,493.0,538.6,298.5,185.4,122.0],
+    llano: [550.1,374.1,515.8,302.7,294.2,101.4],
+    valle: [845.7,638.6,769.5,527.4,606.6,322.2]
+  };
+  new Chart(document.getElementById('monthlyPlvChart'), {
+    type:'bar',
+    data:{
+      labels: MONTHS,
+      datasets:[
+        {label:'Punta (peak)',    data:PLV.punta, backgroundColor:'rgba(248,113,113,0.8)', stack:'s', borderRadius:0, borderWidth:0},
+        {label:'Llano (mid)',     data:PLV.llano, backgroundColor:'rgba(251,191,36,0.8)',  stack:'s', borderRadius:0, borderWidth:0},
+        {label:'Valle (off-peak)',data:PLV.valle, backgroundColor:'rgba(74,222,128,0.8)',  stack:'s', borderRadius:4, borderWidth:0}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#9ca3af',font:{size:10},boxWidth:10,padding:10}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw} kWh`}}
+      },
+      scales:{
+        x:{stacked:true, ticks:{color:'#6b7280',font:{size:11}},grid:{display:false},border:{color:'#2a2a2e'}},
+        y:{stacked:true, ticks:{color:'#5e5d59',font:{size:10},callback:v=>v+' kWh'},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}}
+      }
+    }
+  });
+}
+
+let _hourlyBuilt = false;
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab === 'hourly' && !_hourlyBuilt){ buildHourlyCharts(); _hourlyBuilt=true; }
   });
 });
 
