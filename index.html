@@ -911,50 +911,69 @@ document.querySelectorAll('[data-range]').forEach(btn => {
   });
 });
 
-async function initAll() {
-  try {
-    const { daily } = await fetchSheetData();
-    if (daily.length > 0) {
-      allDays = daily;
+const ELEC_CACHE_KEY = 'elec_daily_v1';
+const ELEC_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
 
-      // Build EUR map from BILLS array (accurate per-bill data)
-      const billEurMap = {};
-      BILLS.forEach(b => {
-        const m = b.period.match(/([A-Z][a-z]{2})\s+(\d{4})/);
-        if (m) {
-          const key = m[1] + ' ' + m[2];
-          billEurMap[key] = (billEurMap[key] || 0) + b.eur;
-        }
-      });
+function applyDailyData(daily) {
+  allDays = daily;
+  const billEurMap = {};
+  BILLS.forEach(b => {
+    const m = b.period.match(/([A-Z][a-z]{2})\s+(\d{4})/);
+    if (m) { const key = m[1] + ' ' + m[2]; billEurMap[key] = (billEurMap[key] || 0) + b.eur; }
+  });
+  const mMap = {};
+  daily.forEach(([mo,,kwh]) => {
+    const [mm, yy] = mo.split(' ');
+    const key = MO_NAMES[+mm] + ' ' + yy;
+    if (!mMap[key]) mMap[key] = { kwh: 0, eur: null };
+    mMap[key].kwh += kwh;
+  });
+  Object.keys(mMap).forEach(k => {
+    mMap[k].kwh = Math.round(mMap[k].kwh);
+    mMap[k].eur = billEurMap[k] ? Math.round(billEurMap[k]) : (MONTHLY_AVGS[k]?.eur || null);
+  });
+  Object.keys(MONTHLY_AVGS).forEach(k => delete MONTHLY_AVGS[k]);
+  Object.assign(MONTHLY_AVGS, mMap);
+}
 
-      // Rebuild MONTHLY_AVGS from daily data
-      const mMap = {};
-      daily.forEach(([mo,,kwh]) => {
-        const [mm, yy] = mo.split(' ');
-        const key = MO_NAMES[+mm] + ' ' + yy;
-        if (!mMap[key]) mMap[key] = { kwh: 0, eur: null };
-        mMap[key].kwh += kwh;
-      });
-      Object.keys(mMap).forEach(k => {
-        mMap[k].kwh = Math.round(mMap[k].kwh);
-        mMap[k].eur = billEurMap[k] ? Math.round(billEurMap[k]) : (MONTHLY_AVGS[k]?.eur || null);
-      });
-      Object.keys(MONTHLY_AVGS).forEach(k => delete MONTHLY_AVGS[k]);
-      Object.assign(MONTHLY_AVGS, mMap);
-
-      const el = document.getElementById('last-updated');
-      if (el) el.textContent = 'Live · ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
-    }
-  } catch(e) {
-    console.warn('Sheet fetch failed, using static data:', e);
-  }
-
+function renderAll() {
   initDailyKPIs();
   buildDailyChart('30');
   buildDistChart();
   buildEVChart();
   initMonthly();
   initBills();
+}
+
+async function initAll() {
+  // Try cache first — render immediately
+  try {
+    const raw = localStorage.getItem(ELEC_CACHE_KEY);
+    if (raw) {
+      const { ts, daily } = JSON.parse(raw);
+      if (Date.now() - ts < ELEC_CACHE_TTL && daily?.length > 0) {
+        applyDailyData(daily);
+        const el = document.getElementById('last-updated');
+        if (el) el.textContent = 'Cache · ' + new Date(ts).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+        renderAll();
+      }
+    }
+  } catch {}
+
+  // Fetch fresh in background
+  try {
+    const { daily } = await fetchSheetData();
+    if (daily.length > 0) {
+      localStorage.setItem(ELEC_CACHE_KEY, JSON.stringify({ ts: Date.now(), daily }));
+      applyDailyData(daily);
+      const el = document.getElementById('last-updated');
+      if (el) el.textContent = 'Live · ' + new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+      renderAll();
+    }
+  } catch(e) {
+    console.warn('Sheet fetch failed, using cached/static data:', e);
+    if (!allDays.length) renderAll();
+  }
 }
 
 initAll();
