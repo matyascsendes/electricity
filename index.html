@@ -912,7 +912,7 @@ document.querySelectorAll('[data-range]').forEach(btn => {
 });
 
 const ELEC_CACHE_KEY = 'elec_daily_v1';
-const ELEC_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+const ELEC_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 function applyDailyData(daily) {
   allDays = daily;
