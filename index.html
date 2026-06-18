@@ -247,7 +247,7 @@ h1 span{color:#4ade80;font-weight:400}
       <div class="chart-header">
         <div>
           <div class="chart-title">Cost per kWh over time</div>
-          <div class="chart-sub">Effective rate — provider switch visible</div>
+          <div class="chart-sub">Effective rate excl. potencia — provider switch visible</div>
         </div>
       </div>
       <div style="position:relative;height:200px;">
@@ -431,6 +431,12 @@ function estimateBill(kwh, days) {
   const ie = (kwh / 1000) * GANA.ieCIM;
   return (pot + energy + fixed + ie) * (1 + GANA.vat);
 }
+function estimateBillExclPot(kwh, days) {
+  const energy = kwh * GANA.energyRate * (1 - GANA.discount);
+  const fixed = (GANA.bono + GANA.contador) * days;
+  const ie = (kwh / 1000) * GANA.ieCIM;
+  return (energy + fixed + ie) * (1 + GANA.vat);
+}
 
 // Net energy rate (ha salido a) from bills — pure energy per kWh, no fixed/taxes
 // Endesa: ~0.1225, Jan26 transition: 0.1338, Gana Feb26+: 0.1401
@@ -443,13 +449,9 @@ const BILL_NET_RATES = {
 // Gana net energy rate for months without a finalized bill
 const GANA_NET_RATE = GANA.energyRate * (1 - GANA.discount);
 
-// Extra potencia cost (incl. VAT) from upgrading 8.8→14.4kW on Mar 9 2026
-// Jan/Feb 2026 Gana was still 8.8kW; upgrade happened Mar 9
-const EXTRA_POT_PER_DAY = (14.4 - 8.8) * (GANA.potPeak + GANA.potValley) * (1 + GANA.vat);
-const POTENCIA_UPGRADE_DAYS = {
-  "Mar 2026": 22, // Mar 9–31
-  "Apr 2026": 30, "May 2026": 31, "Jun 2026": 30
-};
+// Full potencia per day (incl. VAT) by provider
+const GANA_POT_PER_DAY = GANA.potKW * (GANA.potPeak + GANA.potValley) * (1 + GANA.vat);
+const ENDESA_POT_PER_DAY = 8.8 * 0.141 * (1 + 0.21); // ~1.50 €/day, estimated 2.0TD 8.8kW
 
 function parseDate(s) {
   const [m,d,y] = s.split('/');
@@ -711,12 +713,19 @@ function initMonthly() {
         }).length;
         if (daysElapsed > 0) estKwh = Math.round(kwh / daysElapsed * daysInMon);
       }
-      eur = estimateBill(estKwh, daysInMon);
+      eur = estimateBillExclPot(estKwh, daysInMon);
       kwh = estKwh;
     }
     const netRate = BILL_NET_RATES[m] ?? GANA_NET_RATE;
-    const extraPot = (POTENCIA_UPGRADE_DAYS[m] ?? 0) * EXTRA_POT_PER_DAY;
-    const grossRate = (eur - extraPot) / kwh;
+    let grossRate;
+    if (est) {
+      // estimated bill already uses estimateBillExclPot (set below), no potencia in eur
+      grossRate = eur / kwh;
+    } else {
+      // actual bill: subtract full potencia by provider
+      const potDay = m >= "Apr 2026" ? GANA_POT_PER_DAY : ENDESA_POT_PER_DAY;
+      grossRate = (eur - potDay * daysInMon) / kwh;
+    }
     return { m, netRate: +netRate.toFixed(4), grossRate: +grossRate.toFixed(4), est };
   }).filter(Boolean);
 
@@ -729,7 +738,7 @@ function initMonthly() {
       labels: rLabels,
       datasets: [
         {
-          label: 'Gross adj.',
+          label: 'Excl. potencia',
           data: rateData.map(d => d.grossRate),
           borderColor: '#60a5fa', borderWidth: 1.5, tension: 0.3, fill: false,
           pointRadius: rIsEst.map(e => e ? 3 : 4),
