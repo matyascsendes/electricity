@@ -228,6 +228,18 @@ h1 span{color:#4ade80;font-weight:400}
       </div>
     </div>
 
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Havi átlag (kWh/nap)</div>
+          <div class="chart-sub">Napi átlagfogyasztás hónaponként — hónaphossz normalizálva</div>
+        </div>
+      </div>
+      <div style="position:relative;height:220px;">
+        <canvas id="avgDayChart"></canvas>
+      </div>
+    </div>
+
     <div class="section-label">Month by month</div>
     <div class="monthly-grid" id="monthly-cards"></div>
 
@@ -676,6 +688,37 @@ function initMonthly() {
         x: { ticks: { color: '#5e5d59', font: { size: 11 }, maxRotation: 45 }, grid: { display: false }, border: { color: '#2a2a2e' } },
         y: { ticks: { color: '#e8c547', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false }, position: 'left' },
         y1: { ticks: { color: '#5b9bd5', font: { size: 10 }, callback: v => '€' + v }, grid: { display: false }, border: { display: false }, position: 'right' }
+      }
+    }
+  });
+
+  // Build avg kWh/day chart
+  const mAvgDay = validMonths.map(m => {
+    const [mon, yr] = m.split(' ');
+    const mi = MO_NAMES.indexOf(mon);
+    const days = new Date(+yr, mi, 0).getDate();
+    return MONTHLY_AVGS[m].kwh ? +(MONTHLY_AVGS[m].kwh / days).toFixed(1) : null;
+  });
+  new Chart(document.getElementById('avgDayChart'), {
+    type: 'bar',
+    data: {
+      labels: mLabels,
+      datasets: [{
+        data: mAvgDay,
+        backgroundColor: mAvgDay.map(v => v === Math.max(...mAvgDay.filter(Boolean)) ? 'rgba(248,113,113,0.6)' : v === Math.min(...mAvgDay.filter(Boolean)) ? 'rgba(74,222,128,0.6)' : 'rgba(255,255,255,0.12)'),
+        borderWidth: 0,
+        borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' kWh/nap' } }
+      },
+      scales: {
+        x: { ticks: { color: '#5e5d59', font: { size: 11 }, maxRotation: 45 }, grid: { display: false }, border: { color: '#2a2a2e' } },
+        y: { ticks: { color: '#888', font: { size: 10 }, callback: v => v + ' kWh' }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } }
       }
     }
   });
