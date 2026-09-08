@@ -111,6 +111,13 @@
       "total_kwh": 950,
       "total_eur": 239.94,
       "note": "Consumption breakdown by period: P1=218 kWh, P2=196 kWh, P3=536 kWh (total 950 kWh). Contract holder: MATYAS CSENDES, CUPS: ES0021000008282064AZ, tariff 2.0TD, contracted power P1/P2: 14.4 kW. Only per-period totals available, not daily readings. Average consumption for postal code in same period was 253.4 kWh. Invoice number: N_26002700128."
+    },
+    {
+      "period_start": "2026-08-04",
+      "period_end": "2026-09-03",
+      "total_kwh": 956,
+      "total_eur": 251.37,
+      "note": "Daily readings not available in bill. Consumption breakdown by period: P1=267 kWh, P2=246 kWh, P3=443 kWh. Total consumption 956 kWh over 31 days. Tariff 2.0TD, power P1/P2: 14.4kW. CUPS: ES0021000008282064AZ. Meter: 0043469599. Reading origin: Real CCH. Average consumption for postal code same period: 466.2 kWh."
     }
   ]
 }
