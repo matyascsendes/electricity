@@ -113,6 +113,13 @@
       "note": "Consumption breakdown by period: P1=218 kWh, P2=196 kWh, P3=536 kWh (total 950 kWh). Contract holder: MATYAS CSENDES, CUPS: ES0021000008282064AZ, tariff 2.0TD, contracted power P1/P2: 14.4 kW. Only per-period totals available, not daily readings. Average consumption for postal code in same period was 253.4 kWh. Invoice number: N_26002700128."
     },
     {
+      "period_start": "2026-07-04",
+      "period_end": "2026-08-03",
+      "total_kwh": 91,
+      "total_eur": 115.47,
+      "note": "Consumption by period: P1=10 kWh, P2=12 kWh, P3=69 kWh (total 91 kWh). Meter readings only available at period start/end, not daily. Power terms P1/P2 at 14.4 kW each. Distributor: IBERDROLA. CUPS: ES0021000008282064AZ. Tariff: 2.0TD. Meter number: 0043469599. Base imponible 95.43€, IVA 21% 20.04€. Daily consumption available via Área Cliente or distributor website."
+    },
+    {
       "period_start": "2026-08-04",
       "period_end": "2026-09-03",
       "total_kwh": 956,
