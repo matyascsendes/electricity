@@ -651,16 +651,21 @@ const EV_READINGS = [
 const EV_START = "6/6/2026";
 
 function buildEVChart() {
+  if (sheetEvPct !== null) {
+    document.getElementById('ev-pct').textContent = sheetEvPct.toFixed(2) + '%';
+    const sub = (sheetEvKwh && sheetEvTotal)
+      ? `${sheetEvKwh.toFixed(1)} kWh EV / ${sheetEvTotal.toFixed(0)} kWh total · since aug 16`
+      : 'since aug 16';
+    document.getElementById('ev-sub').textContent = sub;
+    return;
+  }
+  // fallback: calculate from hardcoded EV_READINGS
   const evTotal = EV_READINGS[EV_READINGS.length - 1][1];
   const lastDate = EV_READINGS[EV_READINGS.length - 1][0];
-
-  // Total house consumption from EV_START
   const startIdx = allDays.findIndex(r => r[1] === EV_START);
   const sinceStart = startIdx >= 0 ? allDays.slice(startIdx) : [];
   const totalKwh = sinceStart.reduce((a, r) => a + r[2], 0);
-
   const pct = totalKwh > 0 ? (evTotal / totalKwh * 100) : 0;
-
   document.getElementById('ev-pct').textContent = pct.toFixed(1) + '%';
   document.getElementById('ev-sub').textContent =
     `${evTotal} kWh EV / ${totalKwh.toFixed(0)} kWh total · since Jun 6 · last reading ${lastDate}`;
@@ -1018,7 +1023,8 @@ async function initAll() {
 
   // Fetch fresh in background
   try {
-    const { daily } = await fetchSheetData();
+    const { daily, evSharePct, evShareKwh, evShareTotal } = await fetchSheetData();
+    if (evSharePct !== null) { sheetEvPct = evSharePct; sheetEvKwh = evShareKwh; sheetEvTotal = evShareTotal; }
     if (daily.length > 0) {
       localStorage.setItem(ELEC_CACHE_KEY, JSON.stringify({ ts: Date.now(), daily }));
       applyDailyData(daily);
