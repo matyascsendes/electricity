@@ -82,6 +82,16 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
 
 
 
+.plug-table{width:100%;border-collapse:collapse;font-size:13px}
+.plug-table th{text-align:left;color:#555;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.5px;text-transform:uppercase;padding:8px 20px 8px 0;border-bottom:1px solid rgba(255,255,255,0.07)}
+.plug-table td{padding:11px 20px 11px 0;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
+.plug-table td.num{text-align:right;font-family:'DM Mono',monospace;color:#ccc}
+.plug-on{color:#4ade80;font-weight:500}
+.plug-off{color:#555}
+.plug-offline{color:#f87171;font-size:10px;margin-left:6px;font-family:'DM Mono',monospace}
+.plug-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#999;border:1px solid rgba(255,255,255,0.1);border-radius:999px;padding:5px 12px 5px 9px;cursor:pointer;background:transparent;font-family:'Syne',sans-serif;transition:opacity .15s}
+.plug-chip.off{opacity:.35}
+.plug-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 @media(max-width:600px){body{margin-left:0}}
 </style>
 <script>if(localStorage.getItem("snc")==="1")document.documentElement.classList.add("nav-collapsed")</script>
@@ -107,6 +117,7 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
   <div class="tab" data-tab="monthly">Havi trendek</div>
   <div class="tab" data-tab="hourly">Óránkénti</div>
   <div class="tab" data-tab="bills">Számlák</div>
+  <div class="tab" data-tab="plugs">Okos konnektorok</div>
 </div>
 
 <div class="content">
@@ -364,6 +375,76 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
         <canvas id="breakdownChart" role="img" aria-label="Bill breakdown by component for latest bill"></canvas>
       </div>
     </div>
+    </div>
+  </div>
+
+  <!-- SMART PLUGS TAB -->
+  <div class="tab-panel" id="tab-plugs">
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Now</div>
+        <div class="kpi-value accent" id="pl-now">—</div>
+        <div class="kpi-sub">W · összes konnektor</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Today</div>
+        <div class="kpi-value" id="pl-today">—</div>
+        <div class="kpi-sub">kWh eddig</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">7d avg/day</div>
+        <div class="kpi-value" id="pl-7avg">—</div>
+        <div class="kpi-sub">kWh/nap</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">This month</div>
+        <div class="kpi-value" id="pl-month-kwh">—</div>
+        <div class="kpi-sub">kWh eddig</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Est. cost</div>
+        <div class="kpi-value accent" id="pl-month-cost">—</div>
+        <div class="kpi-sub">havi, Gana ráta alapján</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Teljesítmény konnektoronként</div>
+          <div class="chart-sub">W, óránkénti mérés</div>
+        </div>
+        <div class="filter-row">
+          <button class="filter-btn active" data-plrange="24">24 h</button>
+          <button class="filter-btn" data-plrange="168">7 nap</button>
+        </div>
+      </div>
+      <div style="position:relative;height:280px;">
+        <canvas id="plugPowerChart" role="img" aria-label="Smart plug power over time"></canvas>
+      </div>
+      <div class="rooms" id="plugChips" style="display:flex;flex-wrap:wrap;gap:7px;margin-top:14px"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Havi fogyasztás &amp; becsült költség</div>
+          <div class="chart-sub">kWh oszlopok + € becslés (Gana energia ráta, adó nélkül a fix díjakon)</div>
+        </div>
+      </div>
+      <div style="position:relative;height:240px;">
+        <canvas id="plugMonthlyChart" role="img" aria-label="Smart plug monthly kWh and estimated cost"></canvas>
+      </div>
+    </div>
+
+    <div class="section-label">Konnektorok</div>
+    <div style="overflow-x:auto">
+    <table class="plug-table">
+      <thead>
+        <tr><th>Konnektor</th><th style="text-align:right">Now</th><th style="text-align:right">Total tracked</th><th>Állapot</th></tr>
+      </thead>
+      <tbody id="plugTbody"></tbody>
+    </table>
     </div>
   </div>
 
@@ -961,6 +1042,144 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
     if(tab.dataset.tab === 'hourly' && !_hourlyBuilt){ buildHourlyCharts(); _hourlyBuilt=true; }
+    if(tab.dataset.tab === 'plugs' && !plugData){ loadPlugs(); }
+  });
+});
+
+// --- Smart plugs (Tuya) ---
+const PLUG_COLORS = ["#e0a34a","#5fa8d3","#d9695f","#7fbf7f","#b08cd0","#e0c65f","#5fc7bd","#e08bb0","#8fa1e0"];
+let plugData = null, plugActive = new Set(), plugRange = 24, plugPowerChartInst = null, plugMonthlyChartInst = null;
+
+async function loadPlugs() {
+  try {
+    const res = await fetch('/temperature/power');
+    plugData = await res.json();
+  } catch (e) { console.warn('plug fetch failed', e); return; }
+  if (!plugActive.size) plugData.latest.forEach(p => plugActive.add(p.name));
+  renderPlugKpis();
+  renderPlugChips();
+  renderPlugChart();
+  renderPlugMonthly();
+  renderPlugTable();
+}
+
+function utcDayKey(d) { return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`; }
+function utcMonthKey(d) { return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`; }
+
+function renderPlugKpis() {
+  const { latest, daily, monthly } = plugData;
+  const now = latest.reduce((s,p) => s + (p.power_w || 0), 0);
+  document.getElementById('pl-now').textContent = Math.round(now) + ' W';
+
+  const today = daily.find(d => d.day === utcDayKey(new Date()));
+  document.getElementById('pl-today').textContent = (today ? today.kwh : 0).toFixed(2);
+
+  const last7 = daily.slice(-7);
+  const avg7 = last7.length ? last7.reduce((s,d) => s + d.kwh, 0) / last7.length : 0;
+  document.getElementById('pl-7avg').textContent = avg7.toFixed(2);
+
+  const thisMonth = monthly.find(m => m.month === utcMonthKey(new Date()));
+  const mkwh = thisMonth ? thisMonth.kwh : 0;
+  document.getElementById('pl-month-kwh').textContent = mkwh.toFixed(1);
+  document.getElementById('pl-month-cost').textContent = '€' + (mkwh * GANA_NET_RATE).toFixed(2);
+}
+
+function renderPlugChips() {
+  const wrap = document.getElementById('plugChips');
+  const names = plugData.latest.map(p => p.name).sort();
+  wrap.innerHTML = names.map((n,i) =>
+    `<button class="plug-chip ${plugActive.has(n)?'':'off'}" data-plug="${n}"><span class="plug-dot" style="background:${PLUG_COLORS[i%PLUG_COLORS.length]}"></span>${n}</button>`
+  ).join('');
+  wrap.querySelectorAll('.plug-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const n = btn.dataset.plug;
+      if (plugActive.has(n)) plugActive.delete(n); else plugActive.add(n);
+      btn.classList.toggle('off', !plugActive.has(n));
+      if (plugPowerChartInst) {
+        plugPowerChartInst.data.datasets.forEach(d => { if (d.label === n) d.hidden = !plugActive.has(n); });
+        plugPowerChartInst.update();
+      }
+    });
+  });
+}
+
+function renderPlugChart() {
+  const rows = plugRange <= 24 ? plugData.readings24 : plugData.readings7d;
+  const byPlug = {};
+  rows.forEach(r => { (byPlug[r.plug] ||= []).push({ x: r.ts, y: r.power_w }); });
+  const names = Object.keys(byPlug).sort();
+  const datasets = names.map((n,i) => ({
+    label: n,
+    data: byPlug[n].sort((a,b) => a.x - b.x),
+    borderColor: PLUG_COLORS[i%PLUG_COLORS.length],
+    backgroundColor: PLUG_COLORS[i%PLUG_COLORS.length],
+    pointRadius: 0, borderWidth: 1.6, tension: .25,
+    hidden: !plugActive.has(n),
+  }));
+  const ctx = document.getElementById('plugPowerChart').getContext('2d');
+  if (plugPowerChartInst) plugPowerChartInst.destroy();
+  plugPowerChartInst = new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.parsed.y.toFixed(1)} W` } } },
+      scales: {
+        x: { type: 'linear', ticks: { color: '#5e5d59', font: { size: 10 }, callback: v => { const d = new Date(v); return plugRange <= 24 ? d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : `${d.getDate()}/${d.getMonth()+1}`; } }, grid: { display: false }, border: { color: '#2a2a2e' } },
+        y: { ticks: { color: '#5e5d59', font: { size: 10 }, callback: v => v + 'W' }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false } },
+      },
+    },
+  });
+}
+
+function renderPlugMonthly() {
+  const { monthly } = plugData;
+  const labels = monthly.map(m => m.month);
+  const kwh = monthly.map(m => m.kwh);
+  const cost = monthly.map(m => +(m.kwh * GANA_NET_RATE).toFixed(2));
+  const ctx = document.getElementById('plugMonthlyChart').getContext('2d');
+  if (plugMonthlyChartInst) plugMonthlyChartInst.destroy();
+  plugMonthlyChartInst = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        { type: 'bar', label: 'kWh', data: kwh, backgroundColor: 'rgba(74,222,128,0.5)', borderWidth: 0, yAxisID: 'y' },
+        { type: 'line', label: 'Est. €', data: cost, borderColor: '#5b9bd5', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#5b9bd5', tension: .3, fill: false, yAxisID: 'y1' },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#5e5d59', font: { size: 11 } }, grid: { display: false }, border: { color: '#2a2a2e' } },
+        y: { ticks: { color: '#e8c547', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' }, border: { display: false }, position: 'left' },
+        y1: { ticks: { color: '#5b9bd5', font: { size: 10 }, callback: v => '€' + v }, grid: { display: false }, border: { display: false }, position: 'right' },
+      },
+    },
+  });
+}
+
+function renderPlugTable() {
+  const tbody = document.getElementById('plugTbody');
+  tbody.innerHTML = plugData.latest.map(p => {
+    const onHtml = p.on ? '<span class="plug-on">On</span>' : '<span class="plug-off">Off</span>';
+    const offlineHtml = p.online ? '' : '<span class="plug-offline">offline</span>';
+    return `<tr>
+      <td>${p.name}</td>
+      <td class="num">${p.power_w.toFixed(1)} W</td>
+      <td class="num">${p.energy_kwh.toFixed(2)} kWh</td>
+      <td>${onHtml} ${offlineHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+document.querySelectorAll('[data-plrange]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-plrange]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    plugRange = Number(btn.dataset.plrange);
+    if (plugData) renderPlugChart();
   });
 });
 
