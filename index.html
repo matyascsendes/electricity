@@ -215,6 +215,40 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
         <div id="ev-log-list" style="font-family:'DM Mono',monospace;font-size:10px;color:#555;margin-top:8px;max-height:60px;overflow-y:auto;width:100%"></div>
       </div>
     </div>
+
+    <div class="chart-card" id="ev-savings-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">EV vs. petrol savings</div>
+          <div class="chart-sub" id="ev-savings-sub">estimated from avg. consumption</div>
+        </div>
+      </div>
+      <div class="kpi-grid" style="margin-bottom:16px">
+        <div class="kpi">
+          <div class="kpi-label">Est. km driven</div>
+          <div class="kpi-value" id="evs-km">—</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Petrol equivalent</div>
+          <div class="kpi-value red" id="evs-petrol">—</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Actual elec. cost</div>
+          <div class="kpi-value" id="evs-elec">—</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Savings</div>
+          <div class="kpi-value green" id="evs-savings">—</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:10px;color:#666">
+        <span style="text-transform:uppercase;letter-spacing:1px">Assumptions</span>
+        <label>EV kWh/100km <input type="number" step="0.1" id="evs-ev-rate" style="width:50px;background:#1e1e1b;border:1px solid rgba(255,255,255,0.08);color:#e8e6df;font-family:'DM Mono',monospace;font-size:11px;padding:4px 6px;border-radius:6px"></label>
+        <label>Petrol L/100km <input type="number" step="0.1" id="evs-petrol-rate" style="width:50px;background:#1e1e1b;border:1px solid rgba(255,255,255,0.08);color:#e8e6df;font-family:'DM Mono',monospace;font-size:11px;padding:4px 6px;border-radius:6px"></label>
+        <label>Petrol €/L <input type="number" step="0.01" id="evs-petrol-price" style="width:55px;background:#1e1e1b;border:1px solid rgba(255,255,255,0.08);color:#e8e6df;font-family:'DM Mono',monospace;font-size:11px;padding:4px 6px;border-radius:6px"></label>
+        <button class="filter-btn" onclick="saveEvSavingsParams()">Save</button>
+      </div>
+    </div>
   </div>
 
   <!-- MONTHLY TAB -->
@@ -816,6 +850,7 @@ async function loadEvReadings() {
   }
   renderEvLog();
   buildEVChart();
+  buildEvSavings();
 }
 
 async function saveEvReading() {
@@ -878,28 +913,35 @@ function setEvPeriod(period) {
     b.classList.toggle('active', b.dataset.period === period);
   });
   buildEVChart();
+  buildEvSavings();
+}
+
+// Shared by the EV-share card and the savings card: finds the two Poli readings
+// bounding the selected period and the real Datadis household total between them.
+function evWindowForPeriod(period) {
+  const sorted = evReadings.slice().sort((a, b) => a.date.localeCompare(b.date));
+  const { start, end } = evPeriodRange(period);
+  const before = [...sorted].reverse().find(r => r.date <= start) || sorted.find(r => r.date >= start);
+  const after = [...sorted].reverse().find(r => r.date <= end);
+  if (!before || !after || before === after) return null;
+  const evKwh = after.total_kwh - before.total_kwh;
+  const totalKwh = (datadisData && !datadisData.empty)
+    ? datadisData.daily.filter(d => d.date > before.date && d.date <= after.date).reduce((a, d) => a + d.kwh, 0)
+    : null;
+  return { before, after, evKwh, totalKwh };
 }
 
 function buildEVChart() {
-  const sorted = evReadings.slice().sort((a, b) => a.date.localeCompare(b.date));
-  const { start, end } = evPeriodRange(evPeriod);
-
-  // Bounding readings: last one at/before the range start (or, if logging started mid-range,
-  // the earliest reading available in the range), and the last one at/before the range end.
-  const before = [...sorted].reverse().find(r => r.date <= start) || sorted.find(r => r.date >= start);
-  const after = [...sorted].reverse().find(r => r.date <= end);
-
-  if (before && after && before !== after && datadisData && !datadisData.empty) {
-    const evKwh = after.total_kwh - before.total_kwh;
-    const totalKwh = datadisData.daily
-      .filter(d => d.date > before.date && d.date <= after.date)
-      .reduce((a, d) => a + d.kwh, 0);
+  const w = evWindowForPeriod(evPeriod);
+  if (w && w.totalKwh != null) {
+    const { before, after, evKwh, totalKwh } = w;
     const pct = totalKwh > 0 ? (evKwh / totalKwh * 100) : 0;
     document.getElementById('ev-pct').textContent = pct.toFixed(1) + '%';
     document.getElementById('ev-sub').textContent =
       `${evKwh.toFixed(1)} kWh EV / ${totalKwh.toFixed(0)} kWh total · ${before.date} → ${after.date} · Datadis + Poli log`;
     return;
   }
+  const sorted = evReadings;
   if (sorted.length && sheetEvPct !== null) {
     document.getElementById('ev-pct').textContent = sheetEvPct.toFixed(2) + '%';
     const sub = (sheetEvKwh && sheetEvTotal)
@@ -910,6 +952,59 @@ function buildEVChart() {
   }
   document.getElementById('ev-pct').textContent = '—';
   document.getElementById('ev-sub').textContent = 'Log at least 2 Poli readings spanning this period';
+}
+
+// --- EV vs petrol savings ---
+// Two EVs used about equally: 2024 Škoda Enyaq and 2023 Citroën ë-C4. City-driving
+// consumption assumptions below are editable — tune them from the cars' own trip
+// computers for a sharper estimate. Petrol equivalents: C4 (petrol) for the ë-C4,
+// Kodiaq (petrol) as a size-comparable stand-in for the Enyaq.
+const EV_SAVINGS_DEFAULTS = { evKwhPer100: 14.5, petrolLPer100: 8.0, petrolPricePerL: 1.60 };
+const EV_SAVINGS_KEY = 'evSavingsParams_v1';
+
+function getEvSavingsParams() {
+  try {
+    return { ...EV_SAVINGS_DEFAULTS, ...JSON.parse(localStorage.getItem(EV_SAVINGS_KEY) || '{}') };
+  } catch { return { ...EV_SAVINGS_DEFAULTS }; }
+}
+
+function saveEvSavingsParams() {
+  const params = {
+    evKwhPer100: parseFloat(document.getElementById('evs-ev-rate').value) || EV_SAVINGS_DEFAULTS.evKwhPer100,
+    petrolLPer100: parseFloat(document.getElementById('evs-petrol-rate').value) || EV_SAVINGS_DEFAULTS.petrolLPer100,
+    petrolPricePerL: parseFloat(document.getElementById('evs-petrol-price').value) || EV_SAVINGS_DEFAULTS.petrolPricePerL,
+  };
+  try { localStorage.setItem(EV_SAVINGS_KEY, JSON.stringify(params)); } catch {}
+  buildEvSavings();
+}
+
+function buildEvSavings() {
+  const card = document.getElementById('ev-savings-card');
+  if (!card) return;
+  const params = getEvSavingsParams();
+  document.getElementById('evs-ev-rate').value = params.evKwhPer100;
+  document.getElementById('evs-petrol-rate').value = params.petrolLPer100;
+  document.getElementById('evs-petrol-price').value = params.petrolPricePerL;
+
+  const w = evWindowForPeriod(evPeriod);
+  if (!w) {
+    ['evs-km','evs-petrol','evs-elec','evs-savings'].forEach(id => document.getElementById(id).textContent = '—');
+    document.getElementById('ev-savings-sub').textContent = 'Log at least 2 Poli readings spanning this period';
+    return;
+  }
+  const { before, after, evKwh } = w;
+  const km = evKwh / params.evKwhPer100 * 100;
+  const liters = km * params.petrolLPer100 / 100;
+  const petrolCost = liters * params.petrolPricePerL;
+  const elecCost = estimateBillExclPot(evKwh, 0);
+  const savings = petrolCost - elecCost;
+
+  document.getElementById('evs-km').textContent = Math.round(km).toLocaleString() + ' km';
+  document.getElementById('evs-petrol').textContent = '€' + petrolCost.toFixed(0);
+  document.getElementById('evs-elec').textContent = '€' + elecCost.toFixed(0);
+  document.getElementById('evs-savings').textContent = '€' + savings.toFixed(0);
+  document.getElementById('ev-savings-sub').textContent =
+    `${evKwh.toFixed(1)} kWh · ${before.date} → ${after.date} · Enyaq + ë-C4 vs. C4 + Kodiaq petrol, ${liters.toFixed(0)} L @ €${params.petrolPricePerL}/L`;
 }
 
 function initMonthly() {
@@ -1542,6 +1637,7 @@ async function loadDatadis() {
     if (_hourlyBuilt) buildHourlyCharts();
     buildDistChart();
     buildEVChart();
+    buildEvSavings();
     if (!ideData) {
       document.getElementById('ide-today-card').style.display = '';
       document.getElementById('ide-today-sub').textContent = 'Datadis API (i-DE) · real meter data';
@@ -1551,6 +1647,7 @@ async function loadDatadis() {
 }
 loadDatadis();
 loadEvReadings();
+buildEvSavings();
 {
   const d = document.getElementById('ev-input-date');
   if (d) d.value = new Date().toISOString().slice(0, 10);
