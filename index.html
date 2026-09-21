@@ -199,6 +199,11 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
       </div>
       <div class="chart-card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:200px">
         <div class="chart-sub" style="margin-bottom:8px">EV SHARE OF TOTAL</div>
+        <div id="ev-period-seg" style="display:flex;gap:4px;margin-bottom:12px">
+          <button class="filter-btn active" data-period="month" onclick="setEvPeriod('month')">This month</button>
+          <button class="filter-btn" data-period="30d" onclick="setEvPeriod('30d')">Last 30 days</button>
+          <button class="filter-btn" data-period="year" onclick="setEvPeriod('year')">This year</button>
+        </div>
         <div id="ev-pct" style="font-size:4rem;font-weight:700;color:#86efac;line-height:1;letter-spacing:-2px">—</div>
         <div id="ev-sub" class="chart-sub" style="margin-top:10px">since Jun 6</div>
         <div style="display:flex;gap:6px;align-items:center;margin-top:16px">
@@ -858,29 +863,53 @@ function renderEvLog() {
   }).join('');
 }
 
+let evPeriod = 'month';
+function evPeriodRange(period) {
+  const now = new Date();
+  const iso = d => d.toISOString().slice(0, 10);
+  if (period === '30d') return { start: iso(new Date(now.getTime() - 30 * 86400000)), end: iso(now) };
+  if (period === 'year') return { start: `${now.getFullYear()}-01-01`, end: iso(now) };
+  return { start: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`, end: iso(now) }; // 'month'
+}
+
+function setEvPeriod(period) {
+  evPeriod = period;
+  document.querySelectorAll('#ev-period-seg .filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === period);
+  });
+  buildEVChart();
+}
+
 function buildEVChart() {
-  if (evReadings.length >= 2 && datadisData && !datadisData.empty) {
-    const first = evReadings[0], last = evReadings[evReadings.length - 1];
-    const evKwh = last.total_kwh - first.total_kwh;
+  const sorted = evReadings.slice().sort((a, b) => a.date.localeCompare(b.date));
+  const { start, end } = evPeriodRange(evPeriod);
+
+  // Bounding readings: last one at/before the range start (or, if logging started mid-range,
+  // the earliest reading available in the range), and the last one at/before the range end.
+  const before = [...sorted].reverse().find(r => r.date <= start) || sorted.find(r => r.date >= start);
+  const after = [...sorted].reverse().find(r => r.date <= end);
+
+  if (before && after && before !== after && datadisData && !datadisData.empty) {
+    const evKwh = after.total_kwh - before.total_kwh;
     const totalKwh = datadisData.daily
-      .filter(d => d.date >= first.date && d.date <= last.date)
+      .filter(d => d.date > before.date && d.date <= after.date)
       .reduce((a, d) => a + d.kwh, 0);
     const pct = totalKwh > 0 ? (evKwh / totalKwh * 100) : 0;
     document.getElementById('ev-pct').textContent = pct.toFixed(1) + '%';
     document.getElementById('ev-sub').textContent =
-      `${evKwh.toFixed(1)} kWh EV / ${totalKwh.toFixed(0)} kWh total · ${first.date} → ${last.date} · Datadis + Poli log`;
+      `${evKwh.toFixed(1)} kWh EV / ${totalKwh.toFixed(0)} kWh total · ${before.date} → ${after.date} · Datadis + Poli log`;
     return;
   }
-  if (sheetEvPct !== null) {
+  if (sorted.length && sheetEvPct !== null) {
     document.getElementById('ev-pct').textContent = sheetEvPct.toFixed(2) + '%';
     const sub = (sheetEvKwh && sheetEvTotal)
-      ? `${sheetEvKwh.toFixed(1)} kWh EV / ${sheetEvTotal.toFixed(0)} kWh total · since aug 16 (sheet, log Poli readings above to switch)`
+      ? `${sheetEvKwh.toFixed(1)} kWh EV / ${sheetEvTotal.toFixed(0)} kWh total · since aug 16 (sheet, not enough Poli readings in this period yet)`
       : 'since aug 16';
     document.getElementById('ev-sub').textContent = sub;
     return;
   }
   document.getElementById('ev-pct').textContent = '—';
-  document.getElementById('ev-sub').textContent = 'Log at least 2 Poli readings above to compute EV share';
+  document.getElementById('ev-sub').textContent = 'Log at least 2 Poli readings spanning this period';
 }
 
 function initMonthly() {
