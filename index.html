@@ -108,16 +108,16 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
       <div style="font-family:'DM Mono',monospace;font-size:12px;color:#444;margin-top:6px">Gana Energía &nbsp;·&nbsp; Calle 229, Valencia &nbsp;·&nbsp; 14.4 kW</div>
     </div>
     <div class="header-meta">
-      <div id="last-updated">Betöltés...</div>
+      <div id="last-updated">Loading...</div>
     </div>
   </div>
 </header>
 <div class="tabs">
-  <div class="tab active" data-tab="daily">Napi fogyasztás</div>
-  <div class="tab" data-tab="monthly">Havi trendek</div>
-  <div class="tab" data-tab="hourly">Óránkénti</div>
-  <div class="tab" data-tab="bills">Számlák</div>
-  <div class="tab" data-tab="plugs">Okos konnektorok</div>
+  <div class="tab active" data-tab="daily">Daily consumption</div>
+  <div class="tab" data-tab="monthly">Monthly trends</div>
+  <div class="tab" data-tab="hourly">Hourly</div>
+  <div class="tab" data-tab="bills">Bills</div>
+  <div class="tab" data-tab="plugs">Smart plugs</div>
 </div>
 
 <div class="content">
@@ -157,25 +157,31 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
       </div>
     </div>
 
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Daily consumption</div>
-          <div class="chart-sub">kWh per day, all available data</div>
+    <div style="display:flex;gap:16px;margin-bottom:20px">
+      <div class="chart-card" style="flex:1;min-width:0;margin-bottom:0">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Daily consumption</div>
+            <div class="chart-sub">kWh per day, all available data</div>
+          </div>
+          <div class="filter-row">
+            <button class="filter-btn" data-range="all">All</button>
+            <button class="filter-btn" data-range="90">90d</button>
+            <button class="filter-btn" data-range="30">30d</button>
+            <button class="filter-btn active" data-range="7">7d</button>
+          </div>
         </div>
-        <div class="filter-row">
-          <button class="filter-btn" data-range="all">All</button>
-          <button class="filter-btn" data-range="90">90d</button>
-          <button class="filter-btn active" data-range="30">30d</button>
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#e8c547"></span> kWh/day</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#fbbf24; opacity:0.8"></span> 7-day avg</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#e05858; opacity:0.5"></span> EV charging day</span>
+        </div>
+        <div style="position:relative;height:260px;">
+          <canvas id="dailyChart" role="img" aria-label="Daily electricity consumption chart"></canvas>
         </div>
       </div>
-      <div class="legend">
-        <span class="legend-item"><span class="legend-dot" style="background:#e8c547"></span> kWh/day</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#fbbf24; opacity:0.8"></span> 7-day avg</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#e05858; opacity:0.5"></span> EV charging day</span>
-      </div>
-      <div style="position:relative;height:260px;">
-        <canvas id="dailyChart" role="img" aria-label="Daily electricity consumption chart"></canvas>
+      <div class="chart-card" style="flex:1;min-width:0;margin-bottom:0" id="daily-right-panel">
+        <!-- placeholder for right side -->
       </div>
     </div>
 
@@ -195,6 +201,13 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
         <div class="chart-sub" style="margin-bottom:8px">EV SHARE OF TOTAL</div>
         <div id="ev-pct" style="font-size:4rem;font-weight:700;color:#86efac;line-height:1;letter-spacing:-2px">—</div>
         <div id="ev-sub" class="chart-sub" style="margin-top:10px">since Jun 6</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:16px">
+          <input type="date" id="ev-input-date" style="background:#1e1e1b;border:1px solid rgba(255,255,255,0.08);color:#e8e6df;font-family:'DM Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px">
+          <input type="number" step="0.01" id="ev-input-kwh" placeholder="Poli total kWh" style="background:#1e1e1b;border:1px solid rgba(255,255,255,0.08);color:#e8e6df;font-family:'DM Mono',monospace;font-size:11px;padding:5px 8px;border-radius:6px;width:110px">
+          <button class="filter-btn" id="ev-save-btn" onclick="saveEvReading()">Log</button>
+        </div>
+        <div id="ev-save-msg" style="font-family:'DM Mono',monospace;font-size:10px;color:#4ade80;margin-top:6px;min-height:14px"></div>
+        <div id="ev-log-list" style="font-family:'DM Mono',monospace;font-size:10px;color:#555;margin-top:8px;max-height:60px;overflow-y:auto;width:100%"></div>
       </div>
     </div>
   </div>
@@ -228,8 +241,8 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
       <div class="chart-card" style="margin-bottom:0">
         <div class="chart-header">
           <div>
-            <div class="chart-title">Havi átlag (kWh/nap)</div>
-            <div class="chart-sub">Napi átlag — hónaphossz normalizálva</div>
+            <div class="chart-title">Monthly average (kWh/day)</div>
+            <div class="chart-sub">Daily average — normalized by month length</div>
           </div>
         </div>
         <div style="position:relative;height:260px;">
@@ -267,12 +280,29 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
 
   <!-- HOURLY TAB -->
   <div class="tab-panel" id="tab-hourly">
+    <!-- Live today from i-DE extension -->
+    <div class="chart-card" id="ide-today-card" style="margin-bottom:20px;display:none">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Fogyasztás <span id="ide-today-date" style="color:#6b7280;font-weight:400;font-size:12px"></span></div>
+          <div class="chart-sub" id="ide-today-sub">from i-DE via extension</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:11px;color:#6b7280;font-family:'DM Mono',monospace" id="ide-today-total"></div>
+          <div style="display:flex;gap:4px" id="ideRangeSeg">
+            <button onclick="setIdeRange('24h')" aria-pressed="true" style="background:#4ade80;color:#0c0c0a;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">24h</button>
+            <button onclick="setIdeRange('7d')" aria-pressed="false" style="background:#1e1e1b;color:#666;border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:5px 12px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer">7 nap</button>
+          </div>
+        </div>
+      </div>
+      <div style="position:relative;height:200px"><canvas id="ideTodayChart"></canvas></div>
+    </div>
     <div class="two-col" style="margin-bottom:20px">
       <div class="chart-card" style="margin-bottom:0">
         <div class="chart-header">
           <div>
             <div class="chart-title">Avg. consumption by hour</div>
-            <div class="chart-sub">Jan–Jun 2026 · color = tariff zone</div>
+            <div class="chart-sub" id="hourlyChartSub">Loading Datadis history…</div>
           </div>
         </div>
         <div style="position:relative;height:240px">
@@ -288,12 +318,23 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
         <div class="chart-header">
           <div>
             <div class="chart-title">Monthly Punta / Llano / Valle</div>
-            <div class="chart-sub">kWh per tariff zone per month</div>
+            <div class="chart-sub">kWh per tariff zone per month · real meter data (Datadis)</div>
           </div>
         </div>
         <div style="position:relative;height:240px">
           <canvas id="monthlyPlvChart"></canvas>
         </div>
+      </div>
+    </div>
+    <div class="chart-card" id="history-card" style="display:none">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">2-year consumption history</div>
+          <div class="chart-sub" id="historyChartSub">Weekly totals · Datadis (i-DE)</div>
+        </div>
+      </div>
+      <div style="position:relative;height:220px">
+        <canvas id="historyChart"></canvas>
       </div>
     </div>
     <div class="chart-card">
@@ -384,7 +425,7 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
       <div class="kpi">
         <div class="kpi-label">Now</div>
         <div class="kpi-value accent" id="pl-now">—</div>
-        <div class="kpi-sub">W · összes konnektor</div>
+        <div class="kpi-sub">W · all plugs</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Today</div>
@@ -404,15 +445,15 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
       <div class="kpi">
         <div class="kpi-label">Est. cost</div>
         <div class="kpi-value accent" id="pl-month-cost">—</div>
-        <div class="kpi-sub">havi, Gana ráta alapján</div>
+        <div class="kpi-sub">monthly, based on Gana rate</div>
       </div>
     </div>
 
     <div class="chart-card">
       <div class="chart-header">
         <div>
-          <div class="chart-title">Teljesítmény konnektoronként</div>
-          <div class="chart-sub">W, óránkénti mérés</div>
+          <div class="chart-title">Power by plug</div>
+          <div class="chart-sub">W, hourly measurement</div>
         </div>
         <div class="filter-row">
           <button class="filter-btn active" data-plrange="24">24 h</button>
@@ -428,8 +469,8 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
     <div class="chart-card">
       <div class="chart-header">
         <div>
-          <div class="chart-title">Havi fogyasztás &amp; becsült költség</div>
-          <div class="chart-sub">kWh oszlopok + € becslés (Gana energia ráta, adó nélkül a fix díjakon)</div>
+          <div class="chart-title">Monthly consumption &amp; estimated cost</div>
+          <div class="chart-sub">kWh bars + € estimate (Gana energy rate, excl. fixed charges)</div>
         </div>
       </div>
       <div style="position:relative;height:240px;">
@@ -437,11 +478,11 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
       </div>
     </div>
 
-    <div class="section-label">Konnektorok</div>
+    <div class="section-label">Plugs</div>
     <div style="overflow-x:auto">
     <table class="plug-table">
       <thead>
-        <tr><th>Konnektor</th><th style="text-align:right">Now</th><th style="text-align:right">Total tracked</th><th>Állapot</th></tr>
+        <tr><th>Plug</th><th style="text-align:right">Now</th><th style="text-align:right">Total tracked</th><th>Status</th></tr>
       </thead>
       <tbody id="plugTbody"></tbody>
     </table>
@@ -603,25 +644,44 @@ async function fetchSheetData() {
   return { daily, monthEurMap, evSharePct, evShareKwh, evShareTotal };
 }
 
+let datadisData = null;
+let evReadings = [];
 let allDays = RAW_DATA.filter(r => r[2] > 0);
+let rawSheetDays = [];
 let sheetEvPct = null, sheetEvKwh = null, sheetEvTotal = null;
 
-function initDailyKPIs() {
-  const junDays = allDays.filter(r => r[0] === "06 2026");
-  const junKwh = junDays.reduce((a,r) => a+r[2], 0);
-  const junAvg = junDays.length ? junKwh / junDays.length : 0;
-  const lastDay = junDays[junDays.length - 1];
+function initDailyKPIs(ideToday) {
+  const now = new Date();
+  const curMonKey = String(now.getMonth()+1).padStart(2,'0') + ' ' + now.getFullYear();
+  const curMonLabel = MO_NAMES[now.getMonth()+1] + ' ' + now.getFullYear();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
 
-  document.getElementById('kpi-today').textContent = lastDay ? lastDay[2].toFixed(1) + ' kWh' : '—';
-  document.getElementById('kpi-jun-avg').textContent = junAvg.toFixed(1);
-  document.getElementById('kpi-jun-total').textContent = junKwh.toFixed(0);
+  const curDays = allDays.filter(r => r[0] === curMonKey);
+  const curKwh = curDays.reduce((a,r) => a+r[2], 0);
+  const curAvg = curDays.length ? curKwh / curDays.length : 0;
 
-  const junEstDays = 30;
-  const projKwh = junAvg * junEstDays;
+  // Most recent day: prefer latest dailyHistory entry over hourly D endpoint
+  const latestDay = ideData?.dailyHistory?.length
+    ? ideData.dailyHistory[ideData.dailyHistory.length - 1]
+    : null;
+  const todayKwh = latestDay
+    ? latestDay.consumos.reduce((a,b)=>a+b,0)/1000
+    : ideToday ? ideToday.consumos.reduce((a,b)=>a+b,0)/1000
+    : (curDays[curDays.length-1]?.[2] ?? null);
+  const todayDate = latestDay?.date ?? (ideToday ? ideToday.fechas[0]?.slice(0,10) : curDays[curDays.length-1]?.[1]);
+
+  document.getElementById('kpi-today').textContent = todayKwh != null ? todayKwh.toFixed(1) + ' kWh' : '—';
+  document.querySelector('#kpi-today').closest('.kpi').querySelector('.kpi-sub').textContent = todayDate || '';
+  document.getElementById('kpi-jun-avg').textContent = curAvg.toFixed(1);
+  document.querySelector('#kpi-jun-avg').closest('.kpi').querySelector('.kpi-label').textContent = curMonLabel + ' avg/day';
+  document.getElementById('kpi-jun-total').textContent = curKwh.toFixed(0);
+  document.querySelector('#kpi-jun-total').closest('.kpi').querySelector('.kpi-label').textContent = curMonLabel + ' total';
+
+  const projKwh = curAvg * daysInMonth;
   const potencia = 79.84;
   const energyEst = projKwh * 0.128;
-  const tax = (potencia + energyEst) * 0.0511 + (potencia + energyEst) * 1.21;
   document.getElementById('kpi-jun-est').textContent = '€' + Math.round(potencia + energyEst + (potencia+energyEst)*0.0511 + (potencia+energyEst)*0.21);
+  document.querySelector('#kpi-jun-est').closest('.kpi').querySelector('.kpi-label').textContent = 'Est. ' + curMonLabel + ' bill';
 
   let best = allDays.reduce((a,r) => r[2] < a[2] ? r : a, allDays[0]);
   let peak = allDays.reduce((a,r) => r[2] > a[2] ? r : a, allDays[0]);
@@ -633,7 +693,8 @@ function initDailyKPIs() {
 
 function buildDailyChart(range) {
   let data = allDays;
-  if (range === '30') data = allDays.slice(-30);
+  if (range === '7') data = allDays.slice(-7);
+  else if (range === '30') data = allDays.slice(-30);
   else if (range === '90') data = allDays.slice(-90);
 
   const labels = data.map(r => {
@@ -678,16 +739,31 @@ function buildDailyChart(range) {
 }
 
 function buildDistChart() {
-  // Punta/Llano/Valle from latest Endesa invoice (Jan 2026, P26CON004962291)
-  const plv = [
-    { label: 'Punta',  sub: 'Peak',     kwh: 617,  color: '#f87171' },
-    { label: 'Llano',  sub: 'Mid',      kwh: 522,  color: '#fbbf24' },
-    { label: 'Valle',  sub: 'Off-peak', kwh: 961,  color: '#4ade80' },
-  ];
+  let plv, subLabel;
+  if (datadisData && !datadisData.empty) {
+    const m = datadisData.monthly[datadisData.monthly.length - 1];
+    plv = [
+      { label: 'Punta',  sub: 'Peak',     kwh: +m.punta.toFixed(0),  color: '#f87171' },
+      { label: 'Llano',  sub: 'Mid',      kwh: +m.llano.toFixed(0),  color: '#fbbf24' },
+      { label: 'Valle',  sub: 'Off-peak', kwh: +m.valle.toFixed(0),  color: '#4ade80' },
+    ];
+    subLabel = monthLabel(m.month) + ' · Datadis (real meter data)';
+  } else {
+    // Fallback: latest Endesa invoice (Jan 2026, P26CON004962291)
+    plv = [
+      { label: 'Punta',  sub: 'Peak',     kwh: 617,  color: '#f87171' },
+      { label: 'Llano',  sub: 'Mid',      kwh: 522,  color: '#fbbf24' },
+      { label: 'Valle',  sub: 'Off-peak', kwh: 961,  color: '#4ade80' },
+    ];
+    subLabel = 'Jan 2026 · Endesa invoice (fallback)';
+  }
   const total = plv.reduce((s,d)=>s+d.kwh,0);
+  const subEl = document.querySelector('#distChart').closest('.chart-card').querySelector('.chart-sub');
+  if (subEl) subEl.textContent = subLabel;
 
   const ctx = document.getElementById('distChart').getContext('2d');
-  new Chart(ctx, {
+  if (window._distChart) window._distChart.destroy();
+  window._distChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels: plv.map(d=>`${d.label} · ${d.sub}`),
@@ -724,32 +800,74 @@ function buildDistChart() {
   });
 }
 
-// EV charger cumulative meter readings (date → kWh)
-const EV_READINGS = [
-  ["6/7/2026", 72.89],
-  ["6/13/2026", 130.49]
-];
-const EV_START = "6/6/2026";
+// EV (Poli charger) cumulative meter readings, logged by hand via the input field below
+// and stored server-side (Datadis worker / Durable Object) at /electricity/api/ev.
+async function loadEvReadings() {
+  try {
+    const r = await fetch('/electricity/api/ev');
+    evReadings = await r.json();
+  } catch (e) {
+    console.warn('EV readings fetch failed:', e);
+  }
+  renderEvLog();
+  buildEVChart();
+}
+
+async function saveEvReading() {
+  const dateEl = document.getElementById('ev-input-date');
+  const kwhEl = document.getElementById('ev-input-kwh');
+  const msgEl = document.getElementById('ev-save-msg');
+  const date = dateEl.value;
+  const total_kwh = parseFloat(kwhEl.value);
+  if (!date || isNaN(total_kwh)) { msgEl.textContent = 'Add meg a dátumot és az állást'; msgEl.style.color = '#f87171'; return; }
+  try {
+    await fetch('/electricity/api/ev', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, total_kwh })
+    });
+    kwhEl.value = '';
+    msgEl.style.color = '#4ade80';
+    msgEl.textContent = 'Mentve';
+    await loadEvReadings();
+  } catch (e) {
+    msgEl.style.color = '#f87171';
+    msgEl.textContent = 'Hiba: ' + e.message;
+  }
+}
+
+function renderEvLog() {
+  const el = document.getElementById('ev-log-list');
+  if (!el) return;
+  el.innerHTML = evReadings.slice(-5).reverse().map(r =>
+    `<div style="display:flex;justify-content:space-between;padding:2px 0">
+      <span>${r.date}</span><span>${r.total_kwh.toFixed(2)} kWh</span>
+    </div>`
+  ).join('');
+}
 
 function buildEVChart() {
+  if (evReadings.length >= 2 && datadisData && !datadisData.empty) {
+    const first = evReadings[0], last = evReadings[evReadings.length - 1];
+    const evKwh = last.total_kwh - first.total_kwh;
+    const totalKwh = datadisData.daily
+      .filter(d => d.date >= first.date && d.date <= last.date)
+      .reduce((a, d) => a + d.kwh, 0);
+    const pct = totalKwh > 0 ? (evKwh / totalKwh * 100) : 0;
+    document.getElementById('ev-pct').textContent = pct.toFixed(1) + '%';
+    document.getElementById('ev-sub').textContent =
+      `${evKwh.toFixed(1)} kWh EV / ${totalKwh.toFixed(0)} kWh total · ${first.date} → ${last.date} · Datadis + Poli log`;
+    return;
+  }
   if (sheetEvPct !== null) {
     document.getElementById('ev-pct').textContent = sheetEvPct.toFixed(2) + '%';
     const sub = (sheetEvKwh && sheetEvTotal)
-      ? `${sheetEvKwh.toFixed(1)} kWh EV / ${sheetEvTotal.toFixed(0)} kWh total · since aug 16`
+      ? `${sheetEvKwh.toFixed(1)} kWh EV / ${sheetEvTotal.toFixed(0)} kWh total · since aug 16 (sheet, log Poli readings above to switch)`
       : 'since aug 16';
     document.getElementById('ev-sub').textContent = sub;
     return;
   }
-  // fallback: calculate from hardcoded EV_READINGS
-  const evTotal = EV_READINGS[EV_READINGS.length - 1][1];
-  const lastDate = EV_READINGS[EV_READINGS.length - 1][0];
-  const startIdx = allDays.findIndex(r => r[1] === EV_START);
-  const sinceStart = startIdx >= 0 ? allDays.slice(startIdx) : [];
-  const totalKwh = sinceStart.reduce((a, r) => a + r[2], 0);
-  const pct = totalKwh > 0 ? (evTotal / totalKwh * 100) : 0;
-  document.getElementById('ev-pct').textContent = pct.toFixed(1) + '%';
-  document.getElementById('ev-sub').textContent =
-    `${evTotal} kWh EV / ${totalKwh.toFixed(0)} kWh total · since Jun 6 · last reading ${lastDate}`;
+  document.getElementById('ev-pct').textContent = '—';
+  document.getElementById('ev-sub').textContent = 'Log at least 2 Poli readings above to compute EV share';
 }
 
 function initMonthly() {
@@ -951,7 +1069,7 @@ function initBills() {
   new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Potencia', 'Energía', 'Impuestos', 'Otros'],
+      labels: ['Power', 'Energy', 'Taxes', 'Other'],
       datasets: [{ data: [79.84, 131.86, 57.88, 1.42], backgroundColor: ['#5b9bd5','#e8c547','#e05858','#4caf82'], borderWidth: 0, hoverOffset: 4 }]
     },
     options: {
@@ -966,27 +1084,41 @@ function initBills() {
   const legend = document.createElement('div');
   legend.className = 'legend';
   legend.style.cssText = 'margin-top:12px;justify-content:center';
-  [['Potencia','#5b9bd5'],['Energía','#e8c547'],['Impuestos','#e05858'],['Otros','#4caf82']].forEach(([l,c]) => {
+  [['Power','#5b9bd5'],['Energy','#e8c547'],['Taxes','#e05858'],['Other','#4caf82']].forEach(([l,c]) => {
     legend.innerHTML += `<span class="legend-item"><span class="legend-dot" style="background:${c}"></span>${l}</span>`;
   });
   document.querySelector('#breakdownChart').parentElement.parentElement.appendChild(legend);
 }
 
-function buildHourlyCharts() {
-  // Avg kWh per hour (Jan–Jun 2026, 164 days)
-  const AVG_HOUR = [1.926,1.590,1.450,1.406,1.181,1.123,0.998,1.381,2.203,2.287,2.049,1.979,1.850,2.282,2.463,2.079,1.776,1.901,2.193,3.318,3.598,2.863,3.064,2.336];
-  // tariff zone per hora (1-indexed): P=punta, L=llano, V=valle (weekday avg; weekends are valle but data is mixed)
-  const ZONE = ['V','V','V','V','V','V','V','V','L','L','P','P','P','P','L','L','L','L','P','P','P','P','L','L'];
-  const ZONE_COLOR = {P:'rgba(248,113,113,0.85)',L:'rgba(251,191,36,0.85)',V:'rgba(74,222,128,0.85)'};
+const ZONE_COLOR = {punta:'rgba(248,113,113,0.85)', llano:'rgba(251,191,36,0.85)', valle:'rgba(74,222,128,0.85)'};
 
+// Fallback (Jan–Jun 2026 snapshot) used only until the Datadis API responds.
+const FALLBACK_AVG_HOUR = [1.926,1.590,1.450,1.406,1.181,1.123,0.998,1.381,2.203,2.287,2.049,1.979,1.850,2.282,2.463,2.079,1.776,1.901,2.193,3.318,3.598,2.863,3.064,2.336];
+const FALLBACK_ZONE = ['valle','valle','valle','valle','valle','valle','valle','valle','llano','llano','punta','punta','punta','punta','llano','llano','llano','llano','punta','punta','punta','punta','llano','llano'];
+
+function monthLabel(ym) {
+  const [y, m] = ym.split('-');
+  return MO_NAMES[+m] + " '" + y.slice(2);
+}
+
+function buildHourlyCharts() {
+  const hasLive = datadisData && !datadisData.empty;
+  const sub = document.getElementById('hourlyChartSub');
+  if (sub) sub.textContent = hasLive
+    ? `${datadisData.daily[0].date} → ${datadisData.lastDate} · color = tariff zone · Datadis`
+    : 'Jan–Jun 2026 (fallback) · color = tariff zone';
   const hLabels = Array.from({length:24},(_,i)=>`${i}h`);
-  new Chart(document.getElementById('hourlyChart'), {
+  const avgHour = hasLive ? datadisData.avgByHour.map(h=>h.avgKwh) : FALLBACK_AVG_HOUR;
+  const zones = hasLive ? datadisData.avgByHour.map(h=>h.zone) : FALLBACK_ZONE;
+
+  if (window._hourlyChart) window._hourlyChart.destroy();
+  window._hourlyChart = new Chart(document.getElementById('hourlyChart'), {
     type:'bar',
     data:{
       labels: hLabels,
       datasets:[{
-        data: AVG_HOUR,
-        backgroundColor: ZONE.map(z=>ZONE_COLOR[z]),
+        data: avgHour,
+        backgroundColor: zones.map(z=>ZONE_COLOR[z]),
         borderWidth:0, borderRadius:3
       }]
     },
@@ -1003,17 +1135,29 @@ function buildHourlyCharts() {
     }
   });
 
-  // Monthly PLV stacked bar
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun'];
-  const PLV = {
-    punta: [648.1,493.0,538.6,298.5,185.4,122.0],
-    llano: [550.1,374.1,515.8,302.7,294.2,101.4],
-    valle: [845.7,638.6,769.5,527.4,606.6,322.2]
-  };
-  new Chart(document.getElementById('monthlyPlvChart'), {
+  // Monthly Punta/Llano/Valle — real data, last 12 months when Datadis is available.
+  let mLabels, PLV;
+  if (hasLive) {
+    const months = datadisData.monthly.slice(-12);
+    mLabels = months.map(m=>monthLabel(m.month));
+    PLV = {
+      punta: months.map(m=>+m.punta.toFixed(1)),
+      llano: months.map(m=>+m.llano.toFixed(1)),
+      valle: months.map(m=>+m.valle.toFixed(1))
+    };
+  } else {
+    mLabels = ['Jan','Feb','Mar','Apr','May','Jun'];
+    PLV = {
+      punta: [648.1,493.0,538.6,298.5,185.4,122.0],
+      llano: [550.1,374.1,515.8,302.7,294.2,101.4],
+      valle: [845.7,638.6,769.5,527.4,606.6,322.2]
+    };
+  }
+  if (window._monthlyPlvChart) window._monthlyPlvChart.destroy();
+  window._monthlyPlvChart = new Chart(document.getElementById('monthlyPlvChart'), {
     type:'bar',
     data:{
-      labels: MONTHS,
+      labels: mLabels,
       datasets:[
         {label:'Punta (peak)',    data:PLV.punta, backgroundColor:'rgba(248,113,113,0.8)', stack:'s', borderRadius:0, borderWidth:0},
         {label:'Llano (mid)',     data:PLV.llano, backgroundColor:'rgba(251,191,36,0.8)',  stack:'s', borderRadius:0, borderWidth:0},
@@ -1027,8 +1171,60 @@ function buildHourlyCharts() {
         tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw} kWh`}}
       },
       scales:{
-        x:{stacked:true, ticks:{color:'#6b7280',font:{size:11}},grid:{display:false},border:{color:'#2a2a2e'}},
+        x:{stacked:true, ticks:{color:'#6b7280',font:{size:10},maxRotation:0}, grid:{display:false},border:{color:'#2a2a2e'}},
         y:{stacked:true, ticks:{color:'#5e5d59',font:{size:10},callback:v=>v+' kWh'},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}}
+      }
+    }
+  });
+
+  if (hasLive) buildHistoryChart();
+}
+
+function isoWeekKey(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  const day = (d.getUTCDay() + 6) % 7; // Mon=0
+  d.setUTCDate(d.getUTCDate() - day + 3);
+  const firstThu = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const week = 1 + Math.round(((d - firstThu) / 86400000 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
+  return d.getUTCFullYear() + '-W' + String(week).padStart(2,'0');
+}
+
+function buildHistoryChart() {
+  document.getElementById('history-card').style.display = '';
+  document.getElementById('historyChartSub').textContent =
+    `Weekly totals · ${datadisData.daily[0].date} → ${datadisData.lastDate} · Datadis (i-DE)`;
+  const byWeek = new Map();
+  for (const d of datadisData.daily) {
+    const wk = isoWeekKey(d.date);
+    if (!byWeek.has(wk)) byWeek.set(wk, { wk, kwh: 0, firstDate: d.date });
+    byWeek.get(wk).kwh += d.kwh;
+  }
+  const weeks = [...byWeek.values()].sort((a,b)=>a.wk.localeCompare(b.wk));
+  const labels = weeks.map(w => {
+    const d = new Date(w.firstDate + 'T00:00:00Z');
+    return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', timeZone:'UTC' });
+  });
+  const data = weeks.map(w => +w.kwh.toFixed(1));
+
+  if (window._historyChart) window._historyChart.destroy();
+  window._historyChart = new Chart(document.getElementById('historyChart'), {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        data, borderColor:'#4ade80', backgroundColor:'rgba(74,222,128,0.12)',
+        borderWidth:2, pointRadius:0, tension:0.25, fill:true
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>' '+c.raw+' kWh that week'}}
+      },
+      scales:{
+        x:{ticks:{color:'#6b7280',font:{size:10},maxTicksLimit:12,maxRotation:0},grid:{display:false},border:{color:'#2a2a2e'}},
+        y:{ticks:{color:'#5e5d59',font:{size:10},callback:v=>v+' kWh'},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}}
       }
     }
   });
@@ -1062,6 +1258,7 @@ async function loadPlugs() {
   renderPlugMonthly();
   renderPlugTable();
 }
+setInterval(async () => { if (plugData) await loadPlugs(); }, 60 * 60 * 1000);
 
 function utcDayKey(d) { return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`; }
 function utcMonthKey(d) { return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`; }
@@ -1195,6 +1392,27 @@ const ELEC_CACHE_KEY = 'elec_daily_v1';
 const ELEC_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 function applyDailyData(daily) {
+  rawSheetDays = daily.slice(); // save clean copy
+  // Merge extension dailyHistory on top of sheet data
+  if (ideData?.dailyHistory?.length) {
+    const byDate = {};
+    for (const r of daily) byDate[r[1]] = r;
+    for (const d of ideData.dailyHistory) {
+      if (!d.date || !d.consumos) continue;
+      const kwh = d.consumos.reduce((a,b)=>a+b,0) / 1000;
+      if (kwh <= 0) continue;
+      const [yyyy, mm, dd] = d.date.split('-');
+      // Convert YYYY-MM-DD → M/D/YYYY to match sheet format
+      const sheetDate = `${parseInt(mm)}/${parseInt(dd)}/${yyyy}`;
+      const mo = mm + ' ' + yyyy;
+      byDate[sheetDate] = [mo, sheetDate, Math.round(kwh * 10) / 10, byDate[sheetDate]?.[3] || 0];
+    }
+    // Sort by actual date value (parse M/D/YYYY)
+    daily = Object.values(byDate).sort((a,b) => {
+      const pa = a[1].split('/'), pb = b[1].split('/');
+      return new Date(+pa[2],+pa[0]-1,+pa[1]) - new Date(+pb[2],+pb[0]-1,+pb[1]);
+    });
+  }
   allDays = daily;
   const billEurMap = {};
   BILLS.forEach(b => {
@@ -1216,9 +1434,9 @@ function applyDailyData(daily) {
   Object.assign(MONTHLY_AVGS, mMap);
 }
 
-function renderAll() {
-  initDailyKPIs();
-  buildDailyChart('30');
+function renderAll(ideToday) {
+  initDailyKPIs(ideToday);
+  buildDailyChart('7');
   buildDistChart();
   buildEVChart();
   initMonthly();
@@ -1258,6 +1476,156 @@ async function initAll() {
 }
 
 initAll();
+
+// --- Datadis (i-DE) real consumption history ---
+async function loadDatadis() {
+  try {
+    const r = await fetch('/electricity/api/data');
+    const d = await r.json();
+    if (d && !d.empty) datadisData = d;
+  } catch (e) {
+    console.warn('Datadis fetch failed:', e);
+  }
+  if (datadisData) {
+    if (_hourlyBuilt) buildHourlyCharts();
+    buildDistChart();
+    buildEVChart();
+    if (!ideData) {
+      document.getElementById('ide-today-card').style.display = '';
+      document.getElementById('ide-today-sub').textContent = 'Datadis API (i-DE) · real meter data';
+      drawDatadisRecentChart();
+    }
+  }
+}
+loadDatadis();
+loadEvReadings();
+{
+  const d = document.getElementById('ev-input-date');
+  if (d) d.value = new Date().toISOString().slice(0, 10);
+}
+
+// --- i-DE live data from Chrome extension (optional; Datadis above covers the same card automatically) ---
+let ideTodayChartInst = null;
+let ideData = null;
+let ideRange = '24h';
+
+const isWeekend = d => { const day = new Date(d).getDay(); return day===0||day===6; };
+const tariffZone = (h, dateStr) => {
+  if (isWeekend(dateStr)) return 'valle';
+  if (h>=10&&h<14||h>=18&&h<22) return 'punta';
+  if (h>=8&&h<10||h>=14&&h<18||h>=22&&h<24) return 'llano';
+  return 'valle';
+};
+const zoneColor = z => z==='punta'?'rgba(248,113,113,0.8)':z==='llano'?'rgba(251,191,36,0.8)':'rgba(74,222,128,0.8)';
+
+function setIdeRange(r) {
+  ideRange = r;
+  document.querySelectorAll('#ideRangeSeg button').forEach(b => {
+    const active = b.textContent.trim() === (r==='24h'?'24h':'7 nap');
+    b.style.background = active ? '#4ade80' : '#1e1e1b';
+    b.style.color = active ? '#0c0c0a' : '#666';
+    b.style.border = active ? 'none' : '1px solid rgba(255,255,255,0.08)';
+    b.setAttribute('aria-pressed', active);
+  });
+  if (ideData) drawIdeChart();
+  else if (datadisData) drawDatadisRecentChart();
+}
+
+function drawDatadisRecentChart() {
+  const { daily, recent, lastDate } = datadisData;
+  let labels, data, colors, tooltipUnit;
+
+  if (ideRange === '7d') {
+    const days = daily.slice(-7);
+    labels = days.map(d => d.date.slice(5));
+    data = days.map(d => +d.kwh.toFixed(2));
+    colors = days.map(d => zoneColor(isWeekend(d.date) ? 'valle' : 'llano'));
+    document.getElementById('ide-today-total').textContent =
+      data.reduce((a,b)=>a+b,0).toFixed(1) + ' kWh összesen';
+    document.getElementById('ide-today-date').textContent = `utolsó ${days.length} nap`;
+    tooltipUnit = v => v.toFixed(2) + ' kWh';
+  } else {
+    const dayRows = recent.filter(r => r.date === lastDate).sort((a,b)=>a.hour-b.hour);
+    labels = dayRows.map(r => r.hour + 'h');
+    data = dayRows.map(r => +r.kwh.toFixed(3));
+    colors = dayRows.map(r => zoneColor(r.zone));
+    document.getElementById('ide-today-date').textContent = lastDate;
+    document.getElementById('ide-today-total').textContent =
+      data.reduce((a,b)=>a+b,0).toFixed(2) + ' kWh';
+    tooltipUnit = v => v.toFixed(3) + ' kWh';
+  }
+
+  if (ideTodayChartInst) ideTodayChartInst.destroy();
+  ideTodayChartInst = new Chart(document.getElementById('ideTodayChart'), {
+    type:'bar',
+    data:{ labels, datasets:[{ data, backgroundColor:colors, borderRadius:3 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+tooltipUnit(c.parsed.y)}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#6b7280',font:{size:10}}},
+        y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#6b7280',font:{size:10}}}
+      }
+    }
+  });
+}
+
+function drawIdeChart() {
+  const { hourly, dailyHistory, fetchedAt } = ideData;
+  let labels, data, dateLabel;
+
+  if (ideRange === '7d' && dailyHistory && dailyHistory.length > 1) {
+    // Daily totals for last 7 days
+    const days = dailyHistory.slice(-7);
+    labels = days.map(d => d.date ? d.date.slice(5) : '');
+    data = days.map(d => Math.round(d.consumos.reduce((a,b)=>a+b,0)));
+    const colors = days.map(d => zoneColor(isWeekend(d.date) ? 'valle' : 'llano'));
+    dateLabel = `utolsó ${days.length} nap`;
+    document.getElementById('ide-today-total').textContent =
+      (data.reduce((a,b)=>a+b,0)/1000).toFixed(1) + ' kWh összesen';
+    document.getElementById('ide-today-date').textContent = dateLabel;
+    drawIdeBarChart(labels, data, colors, 'kWh', v => (v/1000).toFixed(2)+' kWh');
+  } else {
+    // 24h hourly
+    labels = hourly.fechas.map(f => f.slice(-2) + 'h');
+    data = hourly.consumos;
+    const colors = hourly.fechas.map(f => zoneColor(tariffZone(parseInt(f.slice(-2)), f.slice(0,10))));
+    const date = hourly.fechas[0] ? hourly.fechas[0].slice(0,10) : '';
+    const fetchedStr = fetchedAt ? new Date(fetchedAt).toLocaleDateString('hu-HU',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    document.getElementById('ide-today-date').textContent = date + (fetchedStr ? ' · lekérve ' + fetchedStr : '');
+    document.getElementById('ide-today-total').textContent =
+      (data.reduce((a,b)=>a+b,0)/1000).toFixed(2) + ' kWh';
+    drawIdeBarChart(labels, data, colors, 'Wh', v => v+' Wh');
+  }
+}
+
+function drawIdeBarChart(labels, data, colors, yUnit, tooltipFn) {
+  const opts = {
+    responsive:true, maintainAspectRatio:false, animation:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${tooltipFn(c.parsed.y)}`}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#6b7280',font:{size:10}}},
+      y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#6b7280',font:{size:10},callback:v=>ideRange==='7d'?(v/1000).toFixed(1)+'k':v+''}}
+    }
+  };
+  if (ideTodayChartInst) ideTodayChartInst.destroy();
+  ideTodayChartInst = new Chart(document.getElementById('ideTodayChart'), {
+    type:'bar',
+    data:{ labels, datasets:[{ data, backgroundColor:colors, borderRadius:3 }] },
+    options: opts
+  });
+}
+
+window.addEventListener('ideConsumptionData', e => {
+  const { hourly } = e.detail;
+  if (!hourly || !hourly.consumos) return;
+  ideData = e.detail;
+  // Re-apply sheet data with extension days merged in
+  applyDailyData(rawSheetDays.length ? rawSheetDays : allDays.slice());
+  renderAll(hourly);
+  document.getElementById('ide-today-card').style.display = '';
+  drawIdeChart();
+});
 </script>
 </body>
 </html>
