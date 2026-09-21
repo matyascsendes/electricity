@@ -798,7 +798,7 @@ function buildMonthlyAvgDayChart() {
     if (sub) sub.textContent = 'Waiting for Datadis history…';
     return;
   }
-  const months = datadisData.monthly;
+  const months = datadisData.monthly.filter(m => m.month >= '2025-08');
   const labels = months.map(m => monthLabel(m.month));
   const avg = months.map(m => +m.avgPerDay.toFixed(1));
   if (sub) sub.textContent = `${months[0].month} → ${months[months.length-1].month} · real meter data (Datadis)`;
