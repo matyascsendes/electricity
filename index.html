@@ -469,8 +469,8 @@ h1 span{color:rgba(255,255,255,0.4);font-weight:400}
     <div class="chart-card">
       <div class="chart-header">
         <div>
-          <div class="chart-title">Monthly consumption &amp; estimated cost</div>
-          <div class="chart-sub">kWh bars + € estimate (Gana energy rate, excl. fixed charges)</div>
+          <div class="chart-title" id="plugMonthlyTitle">Monthly consumption &amp; estimated cost</div>
+          <div class="chart-sub" id="plugMonthlySub">kWh bars + € estimate (Gana energy rate, excl. fixed charges)</div>
         </div>
       </div>
       <div style="position:relative;height:240px;">
@@ -1331,10 +1331,20 @@ function renderPlugChart() {
 }
 
 function renderPlugMonthly() {
-  const { monthly } = plugData;
-  const labels = monthly.map(m => m.month);
-  const kwh = monthly.map(m => m.kwh);
-  const cost = monthly.map(m => +(m.kwh * GANA_NET_RATE).toFixed(2));
+  const { monthly, daily } = plugData;
+  const useDaily = monthly.length < 2;
+  const source = useDaily ? daily : monthly;
+  const labels = useDaily ? daily.map(d => d.day.slice(5)) : monthly.map(m => m.month);
+  const kwh = source.map(r => r.kwh);
+  const cost = source.map(r => +(r.kwh * GANA_NET_RATE).toFixed(2));
+
+  document.getElementById('plugMonthlyTitle').textContent = useDaily
+    ? 'Daily consumption & estimated cost'
+    : 'Monthly consumption & estimated cost';
+  document.getElementById('plugMonthlySub').textContent = useDaily
+    ? `kWh bars + € estimate · not enough history yet for a monthly view (tracking since ${daily[0]?.day})`
+    : 'kWh bars + € estimate (Gana energy rate, excl. fixed charges)';
+
   const ctx = document.getElementById('plugMonthlyChart').getContext('2d');
   if (plugMonthlyChartInst) plugMonthlyChartInst.destroy();
   plugMonthlyChartInst = new Chart(ctx, {
