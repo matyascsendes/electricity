@@ -820,6 +820,10 @@ async function saveEvReading() {
   const date = dateEl.value;
   const total_kwh = parseFloat(kwhEl.value);
   if (!date || isNaN(total_kwh)) { msgEl.textContent = 'Add meg a dátumot és az állást'; msgEl.style.color = '#f87171'; return; }
+
+  // Delta since the last reading strictly before this one (how much the EV charger used since the last update).
+  const prev = evReadings.filter(r => r.date < date).sort((a,b) => b.date.localeCompare(a.date))[0];
+
   try {
     await fetch('/electricity/api/ev', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -827,7 +831,13 @@ async function saveEvReading() {
     });
     kwhEl.value = '';
     msgEl.style.color = '#4ade80';
-    msgEl.textContent = 'Mentve';
+    if (prev) {
+      const delta = total_kwh - prev.total_kwh;
+      const days = Math.round((new Date(date) - new Date(prev.date)) / 86400000);
+      msgEl.textContent = `Mentve — ${delta.toFixed(1)} kWh ${prev.date} óta (${days} nap)`;
+    } else {
+      msgEl.textContent = 'Mentve — ez az első mért állás';
+    }
     await loadEvReadings();
   } catch (e) {
     msgEl.style.color = '#f87171';
@@ -838,11 +848,14 @@ async function saveEvReading() {
 function renderEvLog() {
   const el = document.getElementById('ev-log-list');
   if (!el) return;
-  el.innerHTML = evReadings.slice(-5).reverse().map(r =>
-    `<div style="display:flex;justify-content:space-between;padding:2px 0">
-      <span>${r.date}</span><span>${r.total_kwh.toFixed(2)} kWh</span>
-    </div>`
-  ).join('');
+  const sorted = evReadings.slice().sort((a,b) => a.date.localeCompare(b.date));
+  el.innerHTML = sorted.slice(-6).reverse().map((r, i, arr) => {
+    const prev = sorted[sorted.indexOf(r) - 1];
+    const delta = prev ? `+${(r.total_kwh - prev.total_kwh).toFixed(1)} kWh` : '';
+    return `<div style="display:flex;justify-content:space-between;padding:2px 0">
+      <span>${r.date}</span><span>${r.total_kwh.toFixed(2)} kWh ${delta ? `<span style="color:#4ade80">(${delta})</span>` : ''}</span>
+    </div>`;
+  }).join('');
 }
 
 function buildEVChart() {
