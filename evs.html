@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%94%8B%3C/text%3E%3C/svg%3E">
+<title>EVs</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0d0d10;
+  --surface: #16161c;
+  --surface2: #1e1e26;
+  --border: #2a2a35;
+  --text: #e8e8f0;
+  --muted: #7a7a92;
+  --enyaq: #4ade80;
+  --enyaq-dim: rgba(74,222,128,0.15);
+  --ec4: #fb923c;
+  --ec4-dim: rgba(251,146,60,0.15);
+  --charge: #60a5fa;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --bg: #f2f2f7;
+  --surface: #ffffff;
+  --surface2: #f8f8fc;
+  --border: #dddde8;
+  --text: #111118;
+  --muted: #6b6b82;
+}}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; font-size: 14px; min-height: 100vh; margin-left: 180px; }
+@media(max-width:768px){ body { margin-left: 0; } }
+.mono { font-family: 'DM Mono', monospace; }
+
+/* Header */
+.header { padding: 28px 32px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border); }
+.header-title { display: flex; align-items: baseline; gap: 12px; }
+.header-title h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+.header-title span { color: var(--muted); font-size: 13px; font-family: 'DM Mono', monospace; }
+.date-row { display: flex; align-items: center; gap: 8px; }
+.date-row label { color: var(--muted); font-size: 12px; }
+.date-row input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 5px 10px; border-radius: 6px; font-size: 12px; font-family: 'DM Mono', monospace; }
+.date-row button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: background 0.15s; }
+.date-row button:hover { background: var(--border); }
+
+/* Comparison grid */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid var(--border); }
+.car-col { padding: 24px 32px; }
+.car-col.enyaq { border-right: 1px solid var(--border); }
+.car-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.car-icon { flex-shrink: 0; }
+.car-name { display: flex; flex-direction: column; gap: 2px; }
+.car-name strong { font-size: 18px; font-weight: 700; }
+.car-name small { color: var(--muted); font-size: 12px; font-family: 'DM Mono', monospace; }
+.accent-enyaq { color: var(--enyaq); }
+.accent-ec4 { color: var(--ec4); }
+
+/* Stat tiles */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 0; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.stat-val { font-size: 22px; font-weight: 700; font-family: 'DM Mono', monospace; font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 4px; }
+.stat-lbl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+.enyaq .stat-val { color: var(--enyaq); }
+.ec4 .stat-val { color: var(--ec4); }
+.stat-note { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+/* Charts section */
+.charts { padding: 0 0 32px; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+.chart-panel { padding: 24px 32px; }
+.chart-panel.full { grid-column: 1 / -1; border-right: none; }
+.chart-panel.left { border-right: 1px solid var(--border); }
+.chart-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px; }
+.chart-wrap { position: relative; height: 200px; }
+.chart-wrap.tall { height: 240px; }
+
+/* Trip distribution side by side */
+.dist-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid var(--border); }
+
+/* No data state */
+.no-data { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--muted); font-size: 12px; font-family: 'DM Mono', monospace; }
+
+/* Legend */
+.legend { display: flex; gap: 16px; margin-top: 10px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+@media (max-width: 700px) {
+  .compare, .chart-row, .dist-row { grid-template-columns: 1fr; }
+  .car-col.enyaq { border-right: none; border-bottom: 1px solid var(--border); }
+  .chart-panel.left { border-right: none; border-bottom: 1px solid var(--border); }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .header, .car-col, .chart-panel { padding-left: 16px; padding-right: 16px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="sidenav"></nav>
+<script src="https://mmmmn.net/nav.js"></script>
+
+<div class="header">
+  <div class="header-title">
+    <h1>EVs</h1>
+    <span>ENYAQ vs eC4</span>
+  </div>
+  <div class="date-row">
+    <label>From</label>
+    <input type="date" id="dateFrom" value="2025-10-01">
+    <label>To</label>
+    <input type="date" id="dateTo" value="2026-10-04">
+    <button onclick="applyDates()">Apply</button>
+  </div>
+</div>
+
+<div class="compare">
+  <!-- ENYAQ -->
+  <div class="car-col enyaq">
+    <div class="car-header">
+      <div class="car-icon">
+        <img src="data:image/png;base64,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" width="200" height="68" style="opacity:0.75;filter:brightness(0) invert(1);display:block" alt="ENYAQ">
+      </div>
+      <div class="car-name">
+        <strong class="accent-enyaq">Škoda ENYAQ</strong>
+        <small>VIN …PF020039</small>
+      </div>
+    </div>
+    <div class="stats" id="enyaq-stats"></div>
+  </div>
+
+  <!-- eC4 -->
+  <div class="car-col ec4">
+    <div class="car-header">
+      <div class="car-icon">
+        <img src="data:image/png;base64,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" width="200" height="77" style="opacity:0.75;filter:brightness(0) invert(1);display:block" alt="eC4">
+      </div>
+      <div class="car-name">
+        <strong class="accent-ec4">Citroën eC4</strong>
+        <small>La Canyada base</small>
+      </div>
+    </div>
+    <div class="stats" id="ec4-stats"></div>
+  </div>
+</div>
+
+<div class="charts">
+  <!-- Monthly km -->
+  <div class="chart-row">
+    <div class="chart-panel left">
+      <div class="chart-title">Monthly km — ENYAQ <span style="font-size:10px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400">· dim bars ≈ est. from charging</span></div>
+      <div class="chart-wrap"><canvas id="enyaqKmChart"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title">Monthly km — eC4</div>
+      <div class="chart-wrap"><canvas id="ec4KmChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Efficiency + charging -->
+  <div class="chart-row">
+    <div class="chart-panel left">
+      <div class="chart-title">ENYAQ efficiency kWh/100km</div>
+      <div class="chart-wrap"><canvas id="effChart"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title">Monthly charged kWh</div>
+      <div class="chart-wrap"><canvas id="chargeChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Trip distance distributions -->
+  <div class="dist-row">
+    <div class="chart-panel left">
+      <div class="chart-title">Trip distance — ENYAQ</div>
+      <div class="chart-wrap"><canvas id="enyaqDistChart"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title">Trip distance — eC4</div>
+      <div class="chart-wrap"><canvas id="ec4DistChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Charge start SoC -->
+  <div class="chart-row">
+    <div class="chart-panel left">
+      <div class="chart-title">Charge start SoC — ENYAQ</div>
+      <div class="chart-wrap"><canvas id="socChart"></canvas></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title">Charge session kWh distribution</div>
+      <div class="chart-wrap"><canvas id="chargeDistChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Raw data ──────────────────────────────────────────────────────────────
+const RAW = {
+  enyaq: [{"date":"2026-10-03","km":10.0,"kwh":1.53,"avg":15.3,"startSoc":93,"endSoc":89,"short":false,"pubStops":0,"speed":28.1,"driveMin":21},{"date":"2026-10-02","km":160.0,"kwh":27.03,"avg":16.9,"startSoc":94,"endSoc":67,"short":false,"pubStops":0,"speed":92.4,"driveMin":104},{"date":"2026-10-01","km":7.0,"kwh":1.02,"avg":14.6,"startSoc":95,"endSoc":93,"short":false,"pubStops":0,"speed":20.5,"driveMin":20},{"date":"2026-09-28","km":17.0,"kwh":3.06,"avg":18.0,"startSoc":95,"endSoc":88,"short":false,"pubStops":0,"speed":27.9,"driveMin":37},{"date":"2026-09-27","km":30.0,"kwh":5.61,"avg":18.7,"startSoc":95,"endSoc":82,"short":false,"pubStops":0,"speed":40.2,"driveMin":45},{"date":"2026-09-26","km":17.0,"kwh":3.57,"avg":21.0,"startSoc":96,"endSoc":88,"short":false,"pubStops":0,"speed":17.7,"driveMin":58},{"date":"2026-09-25","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":99,"endSoc":93,"short":false,"pubStops":0,"speed":17.1,"driveMin":49},{"date":"2026-09-24","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":96,"endSoc":90,"short":false,"pubStops":0,"speed":20.1,"driveMin":42},{"date":"2026-09-23","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":93,"endSoc":88,"short":false,"pubStops":0,"speed":18.5,"driveMin":36},{"date":"2026-09-22","km":11.0,"kwh":1.53,"avg":13.9,"startSoc":90,"endSoc":85,"short":false,"pubStops":0,"speed":32.8,"driveMin":20},{"date":"2026-09-21","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":88,"endSoc":83,"short":false,"pubStops":0,"speed":16.0,"driveMin":41},{"date":"2026-09-20","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":91,"endSoc":85,"short":false,"pubStops":0,"speed":20.4,"driveMin":41},{"date":"2026-09-19","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":95,"endSoc":89,"short":false,"pubStops":0,"speed":20.0,"driveMin":42},{"date":"2026-09-18","km":14.0,"kwh":2.04,"avg":14.6,"startSoc":96,"endSoc":90,"short":false,"pubStops":0,"speed":24.0,"driveMin":35},{"date":"2026-09-16","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":92,"endSoc":86,"short":false,"pubStops":0,"speed":20.0,"driveMin":42},{"date":"2026-09-15","km":7.0,"kwh":1.02,"avg":14.6,"startSoc":90,"endSoc":87,"short":false,"pubStops":0,"speed":24.2,"driveMin":17},{"date":"2026-09-14","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":93,"endSoc":88,"short":false,"pubStops":0,"speed":17.6,"driveMin":37},{"date":"2026-09-13","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":94,"endSoc":89,"short":false,"pubStops":0,"speed":18.1,"driveMin":36},{"date":"2026-09-12","km":0.0,"kwh":-0.51,"avg":-14.6,"startSoc":60,"endSoc":61,"short":true,"pubStops":0,"speed":0.0,"driveMin":0},{"date":"2026-09-11","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":97,"endSoc":92,"short":false,"pubStops":0,"speed":18.3,"driveMin":36},{"date":"2026-09-10","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":95,"endSoc":90,"short":false,"pubStops":0,"speed":17.6,"driveMin":37},{"date":"2026-09-09","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":94,"endSoc":89,"short":false,"pubStops":0,"speed":18.1,"driveMin":36},{"date":"2026-09-07","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":91,"endSoc":86,"short":false,"pubStops":0,"speed":17.8,"driveMin":37},{"date":"2026-09-06","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":95,"endSoc":90,"short":false,"pubStops":0,"speed":17.3,"driveMin":38},{"date":"2026-09-05","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":96,"endSoc":91,"short":false,"pubStops":0,"speed":17.3,"driveMin":38},{"date":"2026-09-04","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":96,"endSoc":91,"short":false,"pubStops":0,"speed":17.8,"driveMin":37},{"date":"2026-09-03","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":96,"endSoc":90,"short":false,"pubStops":0,"speed":20.1,"driveMin":42},{"date":"2026-09-02","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":94,"endSoc":89,"short":false,"pubStops":0,"speed":17.8,"driveMin":37},{"date":"2026-09-01","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":95,"endSoc":90,"short":false,"pubStops":0,"speed":18.3,"driveMin":36},{"date":"2026-08-31","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":95,"endSoc":90,"short":false,"pubStops":0,"speed":18.3,"driveMin":36},{"date":"2026-08-30","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":95,"endSoc":90,"short":false,"pubStops":0,"speed":18.1,"driveMin":36},{"date":"2026-08-29","km":11.0,"kwh":1.53,"avg":13.9,"startSoc":95,"endSoc":90,"short":false,"pubStops":0,"speed":29.1,"driveMin":23},{"date":"2026-08-28","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":97,"endSoc":92,"short":false,"pubStops":0,"speed":18.3,"driveMin":36},{"date":"2026-08-27","km":127.0,"kwh":23.5,"avg":18.5,"startSoc":99,"endSoc":70,"short":false,"pubStops":1,"speed":74.6,"driveMin":102},{"date":"2026-08-26","km":3.0,"kwh":0.51,"avg":17.0,"startSoc":100,"endSoc":99,"short":true,"pubStops":0,"speed":15.3,"driveMin":12},{"date":"2026-08-25","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":98,"endSoc":93,"short":false,"pubStops":0,"speed":17.8,"driveMin":37},{"date":"2026-08-24","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":96,"endSoc":91,"short":false,"pubStops":0,"speed":17.6,"driveMin":37},{"date":"2026-08-23","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":95,"endSoc":90,"short":false,"pubStops":0,"speed":17.3,"driveMin":38},{"date":"2026-08-22","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":97,"endSoc":92,"short":false,"pubStops":0,"speed":17.8,"driveMin":37},{"date":"2026-08-21","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":95,"endSoc":90,"short":false,"pubStops":0,"speed":17.8,"driveMin":37},{"date":"2026-08-20","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":95,"endSoc":89,"short":false,"pubStops":0,"speed":20.6,"driveMin":41},{"date":"2026-08-19","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":97,"endSoc":92,"short":false,"pubStops":0,"speed":18.1,"driveMin":36},{"date":"2026-08-18","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":95,"endSoc":89,"short":false,"pubStops":0,"speed":19.8,"driveMin":42},{"date":"2026-08-17","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":96,"endSoc":91,"short":false,"pubStops":0,"speed":17.8,"driveMin":37},{"date":"2026-08-16","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":98,"endSoc":93,"short":false,"pubStops":0,"speed":17.6,"driveMin":37},{"date":"2026-08-15","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":96,"endSoc":91,"short":false,"pubStops":0,"speed":18.1,"driveMin":36},{"date":"2026-08-14","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":96,"endSoc":91,"short":false,"pubStops":0,"speed":17.8,"driveMin":37},{"date":"2026-08-13","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":96,"endSoc":91,"short":false,"pubStops":0,"speed":17.8,"driveMin":37},{"date":"2026-08-12","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":95,"endSoc":90,"short":false,"pubStops":0,"speed":17.6,"driveMin":37},{"date":"2026-08-11","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":95,"endSoc":89,"short":false,"pubStops":0,"speed":20.0,"driveMin":42},{"date":"2026-08-10","km":11.0,"kwh":2.04,"avg":18.5,"startSoc":99,"endSoc":94,"short":false,"pubStops":0,"speed":18.5,"driveMin":36},{"date":"2026-08-09","km":2.0,"kwh":0.51,"avg":25.5,"startSoc":99,"endSoc":98,"short":true,"pubStops":0,"speed":14.1,"driveMin":9},{"date":"2026-08-08","km":4.0,"kwh":1.02,"avg":25.5,"startSoc":92,"endSoc":90,"short":true,"pubStops":0,"speed":19.0,"driveMin":13},{"date":"2026-08-07","km":2.0,"kwh":0.51,"avg":25.5,"startSoc":99,"endSoc":98,"short":true,"pubStops":0,"speed":9.2,"driveMin":13},{"date":"2026-07-16","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":95,"endSoc":89,"short":false,"pubStops":0,"speed":20.4,"driveMin":41},{"date":"2026-07-15","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":94,"endSoc":88,"short":false,"pubStops":0,"speed":19.8,"driveMin":42},{"date":"2026-06-30","km":41.0,"kwh":7.65,"avg":18.7,"startSoc":96,"endSoc":79,"short":false,"pubStops":0,"speed":44.1,"driveMin":56},{"date":"2026-06-29","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":99,"endSoc":79,"short":false,"pubStops":0,"speed":41.0,"driveMin":69},{"date":"2026-06-28","km":47.0,"kwh":8.67,"avg":18.4,"startSoc":99,"endSoc":78,"short":false,"pubStops":0,"speed":44.3,"driveMin":64},{"date":"2026-06-27","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":98,"endSoc":79,"short":false,"pubStops":0,"speed":60.2,"driveMin":47},{"date":"2026-06-26","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":56.8,"driveMin":50},{"date":"2026-06-25","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":53.6,"driveMin":53},{"date":"2026-06-24","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":49.2,"driveMin":57},{"date":"2026-06-23","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":51.3,"driveMin":55},{"date":"2026-06-22","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":52.6,"driveMin":54},{"date":"2026-06-21","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":99,"endSoc":80,"short":false,"pubStops":0,"speed":53.4,"driveMin":53},{"date":"2026-06-20","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":49.7,"driveMin":57},{"date":"2026-06-19","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":52.8,"driveMin":53},{"date":"2026-06-18","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":50.0,"driveMin":56},{"date":"2026-06-17","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":49.9,"driveMin":57},{"date":"2026-06-16","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":51.3,"driveMin":55},{"date":"2026-06-15","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":48.8,"driveMin":58},{"date":"2026-06-14","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":51.8,"driveMin":54},{"date":"2026-06-13","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":51.3,"driveMin":55},{"date":"2026-06-12","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":49.4,"driveMin":57},{"date":"2026-06-11","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":51.8,"driveMin":54},{"date":"2026-06-10","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":49.5,"driveMin":57},{"date":"2026-06-09","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":96,"endSoc":78,"short":false,"pubStops":0,"speed":47.2,"driveMin":60},{"date":"2026-06-08","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":49.5,"driveMin":57},{"date":"2026-06-07","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":51.8,"driveMin":54},{"date":"2026-06-06","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":48.0,"driveMin":59},{"date":"2026-06-05","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":50.5,"driveMin":56},{"date":"2026-06-04","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":48.6,"driveMin":58},{"date":"2026-06-03","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":49.3,"driveMin":57},{"date":"2026-06-02","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":49.5,"driveMin":57},{"date":"2026-06-01","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":51.3,"driveMin":55},{"date":"2026-05-31","km":14.0,"kwh":2.55,"avg":18.2,"startSoc":96,"endSoc":90,"short":false,"pubStops":0,"speed":21.8,"driveMin":38},{"date":"2026-05-30","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":98,"endSoc":80,"short":false,"pubStops":0,"speed":52.6,"driveMin":54},{"date":"2026-05-29","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":98,"endSoc":79,"short":false,"pubStops":0,"speed":51.3,"driveMin":55},{"date":"2026-05-28","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":49.5,"driveMin":57},{"date":"2026-05-27","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":53.4,"driveMin":53},{"date":"2026-05-26","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":50.0,"driveMin":56},{"date":"2026-05-25","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":50.0,"driveMin":56},{"date":"2026-05-24","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":47.9,"driveMin":59},{"date":"2026-05-23","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":49.5,"driveMin":57},{"date":"2026-05-22","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":53.4,"driveMin":53},{"date":"2026-05-21","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":49.9,"driveMin":56},{"date":"2026-05-20","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":52.6,"driveMin":54},{"date":"2026-05-19","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":52.1,"driveMin":54},{"date":"2026-05-18","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":50.0,"driveMin":56},{"date":"2026-05-17","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":52.1,"driveMin":54},{"date":"2026-05-16","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":98,"endSoc":79,"short":false,"pubStops":0,"speed":49.7,"driveMin":57},{"date":"2026-05-15","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":52.1,"driveMin":54},{"date":"2026-05-14","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":52.8,"driveMin":53},{"date":"2026-05-13","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":52.6,"driveMin":54},{"date":"2026-05-12","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":52.8,"driveMin":53},{"date":"2026-05-11","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":49.7,"driveMin":57},{"date":"2026-05-10","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":52.8,"driveMin":53},{"date":"2026-05-09","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":49.9,"driveMin":56},{"date":"2026-05-08","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":53.1,"driveMin":53},{"date":"2026-05-07","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"short":false,"pubStops":0,"speed":51.3,"driveMin":55},{"date":"2026-05-06","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"short":false,"pubStops":0,"speed":51.3,"driveMin":55},{"date":"2026-05-05","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"speed":52.6,"driveMin":54,"short":false,"pubStops":0},{"date":"2026-05-04","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"speed":49.7,"driveMin":57,"short":false,"pubStops":0},{"date":"2026-05-03","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"speed":51.8,"driveMin":54,"short":false,"pubStops":0},{"date":"2026-05-02","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"speed":52.8,"driveMin":53,"short":false,"pubStops":0},{"date":"2026-05-01","km":47.0,"kwh":8.16,"avg":17.4,"startSoc":97,"endSoc":78,"speed":51.8,"driveMin":54,"short":false,"pubStops":0},{"date":"2026-04-30","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"speed":53.4,"driveMin":53,"short":false,"pubStops":0},{"date":"2026-04-29","km":47.0,"kwh":7.65,"avg":16.3,"startSoc":97,"endSoc":79,"speed":52.8,"driveMin":53,"short":false,"pubStops":0},{"date":"2026-04-28","km":14.0,"kwh":2.04,"avg":14.6,"startSoc":72,"endSoc":66,"speed":24.0,"driveMin":35,"short":false,"pubStops":0}],
+  ec4_monthly: {"2025-10":437,"2025-11":494,"2025-12":296,"2026-01":449,"2026-02":699,"2026-03":584,"2026-04":639,"2026-05":1072,"2026-06":627,"2026-08":170,"2026-09":883},
+  ec4_trip_dist: {"<5":359,"5-15":429,"15-30":96,"30-50":5,"50-100":2},
+  charges: [{"date":"2026-10-03","kwh":37.0,"durMin":480,"startSoc":67,"endSoc":97},{"date":"2026-09-29","kwh":32.0,"durMin":420,"startSoc":59,"endSoc":92},{"date":"2026-09-24","kwh":14.0,"durMin":180,"startSoc":79,"endSoc":95},{"date":"2026-09-21","kwh":19.0,"durMin":240,"startSoc":72,"endSoc":91},{"date":"2026-09-17","kwh":22.0,"durMin":300,"startSoc":72,"endSoc":92},{"date":"2026-09-14","kwh":14.0,"durMin":180,"startSoc":83,"endSoc":95},{"date":"2026-09-11","kwh":18.0,"durMin":240,"startSoc":74,"endSoc":91},{"date":"2026-09-08","kwh":19.0,"durMin":240,"startSoc":72,"endSoc":92},{"date":"2026-09-05","kwh":14.0,"durMin":180,"startSoc":81,"endSoc":94},{"date":"2026-09-02","kwh":16.0,"durMin":16,"startSoc":61,"endSoc":82},{"date":"2026-08-27","kwh":41.3,"durMin":540,"startSoc":44,"endSoc":100},{"date":"2026-08-19","kwh":26.0,"durMin":360,"startSoc":67,"endSoc":93},{"date":"2026-08-13","kwh":17.0,"durMin":240,"startSoc":77,"endSoc":92},{"date":"2026-08-08","kwh":14.0,"durMin":180,"startSoc":79,"endSoc":94},{"date":"2026-08-04","kwh":17.0,"durMin":240,"startSoc":77,"endSoc":92},{"date":"2026-07-31","kwh":34.0,"durMin":51,"startSoc":23,"endSoc":97},{"date":"2026-07-17","kwh":16.0,"durMin":16,"startSoc":64,"endSoc":82},{"date":"2026-06-30","kwh":32.0,"durMin":420,"startSoc":59,"endSoc":92},{"date":"2026-06-19","kwh":35.0,"durMin":480,"startSoc":52,"endSoc":97},{"date":"2026-06-12","kwh":32.0,"durMin":420,"startSoc":62,"endSoc":93},{"date":"2026-06-05","kwh":30.0,"durMin":420,"startSoc":63,"endSoc":92},{"date":"2026-06-01","kwh":37.0,"durMin":17,"startSoc":26,"endSoc":88},{"date":"2026-05-25","kwh":30.0,"durMin":390,"startSoc":62,"endSoc":93},{"date":"2026-05-18","kwh":28.0,"durMin":360,"startSoc":67,"endSoc":94},{"date":"2026-05-11","kwh":32.0,"durMin":420,"startSoc":61,"endSoc":93},{"date":"2026-05-06","kwh":56.0,"durMin":57,"startSoc":9,"endSoc":80},{"date":"2026-04-28","kwh":43.0,"durMin":51,"startSoc":22,"endSoc":97},{"date":"2026-04-21","kwh":38.0,"durMin":480,"startSoc":49,"endSoc":98},{"date":"2026-04-14","kwh":36.0,"durMin":480,"startSoc":52,"endSoc":97},{"date":"2026-04-07","kwh":42.0,"durMin":540,"startSoc":43,"endSoc":99},{"date":"2026-03-31","kwh":38.0,"durMin":480,"startSoc":47,"endSoc":97},{"date":"2026-03-24","kwh":38.0,"durMin":480,"startSoc":48,"endSoc":98},{"date":"2026-03-17","kwh":36.0,"durMin":480,"startSoc":51,"endSoc":97},{"date":"2026-03-10","kwh":35.0,"durMin":480,"startSoc":54,"endSoc":97},{"date":"2026-03-03","kwh":68.0,"durMin":57,"startSoc":8,"endSoc":96},{"date":"2026-02-24","kwh":32.0,"durMin":420,"startSoc":59,"endSoc":93},{"date":"2026-02-17","kwh":27.0,"durMin":360,"startSoc":66,"endSoc":94},{"date":"2026-02-10","kwh":22.0,"durMin":300,"startSoc":72,"endSoc":92},{"date":"2026-02-03","kwh":20.0,"durMin":270,"startSoc":74,"endSoc":92},{"date":"2026-01-27","kwh":28.0,"durMin":360,"startSoc":63,"endSoc":93},{"date":"2026-01-20","kwh":24.0,"durMin":330,"startSoc":69,"endSoc":93},{"date":"2026-01-13","kwh":26.0,"durMin":360,"startSoc":67,"endSoc":93},{"date":"2026-01-06","kwh":23.0,"durMin":300,"startSoc":70,"endSoc":93},{"date":"2025-12-29","kwh":25.0,"durMin":330,"startSoc":68,"endSoc":93},{"date":"2025-12-22","kwh":22.0,"durMin":300,"startSoc":71,"endSoc":93},{"date":"2025-12-15","kwh":26.0,"durMin":360,"startSoc":67,"endSoc":93},{"date":"2025-12-08","kwh":24.0,"durMin":330,"startSoc":70,"endSoc":93},{"date":"2025-11-30","kwh":32.0,"durMin":420,"startSoc":60,"endSoc":93},{"date":"2025-11-23","kwh":36.0,"durMin":480,"startSoc":53,"endSoc":97},{"date":"2025-11-16","kwh":34.0,"durMin":450,"startSoc":55,"endSoc":97},{"date":"2025-11-09","kwh":27.0,"durMin":360,"startSoc":64,"endSoc":93},{"date":"2025-11-02","kwh":20.0,"durMin":270,"startSoc":74,"endSoc":92},{"date":"2025-10-26","kwh":22.0,"durMin":300,"startSoc":72,"endSoc":93},{"date":"2025-10-19","kwh":24.0,"durMin":330,"startSoc":69,"endSoc":93},{"date":"2025-10-12","kwh":14.0,"durMin":180,"startSoc":79,"endSoc":95},{"date":"2025-10-05","kwh":12.0,"durMin":170,"startSoc":81,"endSoc":95}]
+};
+
+// ── Date filter ────────────────────────────────────────────────────────────
+let dateFrom = '2025-10-01', dateTo = '2026-10-04';
+
+function applyDates() {
+  dateFrom = document.getElementById('dateFrom').value;
+  dateTo = document.getElementById('dateTo').value;
+  rebuildAll();
+}
+
+function inRange(d) { return d >= dateFrom && d <= dateTo; }
+
+// ── Stats computation ─────────────────────────────────────────────────────
+function computeENYAQ() {
+  const trips = RAW.enyaq.filter(t => inRange(t.date) && !t.short && t.km > 0);
+  const totalKm = trips.reduce((s,t) => s+t.km, 0);
+  const totalKwh = trips.filter(t=>t.kwh>0).reduce((s,t) => s+t.kwh, 0);
+  const eff = totalKm>0 ? totalKwh/totalKm*100 : 0;
+  const maxTrip = trips.length ? Math.max(...trips.map(t=>t.km)) : 0;
+  const chg = RAW.charges.filter(c => inRange(c.date));
+  const totalCharged = chg.reduce((s,c) => s+c.kwh, 0);
+  const fastChg = chg.filter(c => c.durMin>0 && c.kwh/c.durMin*60>22).length;
+  return {totalKm, eff, maxTrip, tripCount: trips.length, totalCharged, sessions: chg.length, fastChg};
+}
+
+function computeEC4() {
+  // eC4 only has monthly aggregates; use them filtered by month range
+  let totalKm = 0, months = 0;
+  for (const [m, km] of Object.entries(RAW.ec4_monthly)) {
+    const monthStart = m + '-01';
+    const monthEnd = m + '-31';
+    if (monthStart <= dateTo && monthEnd >= dateFrom) { totalKm += km; months++; }
+  }
+  return {totalKm, months};
+}
+
+// ── Chart helpers ─────────────────────────────────────────────────────────
+const ENYAQ_COLOR = '#4ade80';
+const EC4_COLOR = '#fb923c';
+const CHARGE_COLOR = '#60a5fa';
+const TEXT_COLOR = '#7a7a92';
+const GRID_COLOR = 'rgba(255,255,255,0.06)';
+
+const baseOpts = (yLabel='') => ({
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y} ${yLabel}` } } },
+  scales: {
+    x: { grid: { color: GRID_COLOR }, ticks: { color: TEXT_COLOR, font: { family: 'DM Mono', size: 10 }, maxRotation: 0 } },
+    y: { grid: { color: GRID_COLOR }, ticks: { color: TEXT_COLOR, font: { family: 'DM Mono', size: 10 } }, beginAtZero: true }
+  }
+});
+
+const charts = {};
+function destroyAll() { Object.values(charts).forEach(c => c.destroy()); Object.keys(charts).forEach(k => delete charts[k]); }
+
+function monthLabel(m) {
+  const [yr, mo] = m.split('-');
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo-1] + (yr==='2026'?'':'\'25');
+}
+
+function getMonthlyData(source, valueKey) {
+  const months = getFilteredMonths();
+  return { labels: months.map(monthLabel), values: months.map(m => Math.round(source[m] || 0)) };
+}
+
+function getFilteredMonths() {
+  const all = ["2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10"];
+  return all.filter(m => (m+'-01') <= dateTo && (m+'-28') >= dateFrom);
+}
+
+// Charging-to-km factor derived from Apr-Oct 2026 overlap (525 kWh consumed / 904 kWh charged)
+const CHARGE_KM_FACTOR = 3.52; // km per kWh charged
+// Months where we have no trip data — estimate from charging
+const TRIP_DATA_START = '2026-04';
+
+// ── Build charts ───────────────────────────────────────────────────────────
+function buildKmChart(id, data, color, estData) {
+  const ctx = document.getElementById(id).getContext('2d');
+  const opts = baseOpts('km');
+  opts.scales.y.ticks.callback = v => v >= 1000 ? (v/1000).toFixed(1)+'k' : v;
+  opts.plugins.tooltip.callbacks.label = ctx => {
+    const suffix = ctx.dataset.label === '≈ est.' ? ' km (est. from charging)' : ' km';
+    return ` ${ctx.parsed.y}${suffix}`;
+  };
+  const datasets = [{ data: data.values, backgroundColor: color+'33', borderColor: color, borderWidth: 1.5, borderRadius: 3, label: 'km' }];
+  if (estData) datasets.unshift({ data: estData.values, backgroundColor: color+'18', borderColor: color+'55', borderWidth: 1, borderRadius: 3, label: '≈ est.' });
+  charts[id] = new Chart(ctx, { type: 'bar', data: { labels: data.labels, datasets }, options: opts });
+}
+
+function buildEffChart() {
+  const months = getFilteredMonths();
+  const effByMonth = {};
+  RAW.enyaq.filter(t => !t.short && t.km > 5 && t.kwh > 0 && inRange(t.date)).forEach(t => {
+    const m = t.date.slice(0,7);
+    if (!effByMonth[m]) effByMonth[m] = [0,0];
+    effByMonth[m][0] += t.kwh; effByMonth[m][1] += t.km;
+  });
+  const labels = months.filter(m => effByMonth[m]).map(monthLabel);
+  const values = months.filter(m => effByMonth[m]).map(m => +(effByMonth[m][0]/effByMonth[m][1]*100).toFixed(1));
+  const ctx = document.getElementById('effChart').getContext('2d');
+  const opts = baseOpts('kWh/100');
+  opts.scales.y.min = 10; opts.scales.y.max = 25;
+  opts.plugins.tooltip.callbacks.label = ctx => ` ${ctx.parsed.y} kWh/100km`;
+  charts['effChart'] = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ data: values, borderColor: ENYAQ_COLOR, backgroundColor: ENYAQ_COLOR+'22', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: ENYAQ_COLOR }] },
+    options: opts
+  });
+}
+
+function buildChargeChart() {
+  const chargeByMonth = {};
+  RAW.charges.filter(c => inRange(c.date)).forEach(c => {
+    const m = c.date.slice(0,7);
+    chargeByMonth[m] = (chargeByMonth[m]||0) + c.kwh;
+  });
+  const months = getFilteredMonths().filter(m => chargeByMonth[m]);
+  const ctx = document.getElementById('chargeChart').getContext('2d');
+  charts['chargeChart'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: months.map(monthLabel), datasets: [{ data: months.map(m => Math.round(chargeByMonth[m]||0)), backgroundColor: CHARGE_COLOR+'33', borderColor: CHARGE_COLOR, borderWidth: 1.5, borderRadius: 3 }] },
+    options: baseOpts('kWh')
+  });
+}
+
+function buildDistChart(id, distObj, color) {
+  const bins = ['<5','5-15','15-30','30-50','50-100','>100'];
+  const labels = ['<5km','5-15','15-30','30-50','50-100','>100'];
+  const values = bins.map(b => distObj[b]||0);
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: values, backgroundColor: color+'33', borderColor: color, borderWidth: 1.5, borderRadius: 3 }] },
+    options: { ...baseOpts('trips'), plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} trips` } } } }
+  });
+}
+
+function buildENYAQDist() {
+  const dist = {'<5':0,'5-15':0,'15-30':0,'30-50':0,'50-100':0,'>100':0};
+  RAW.enyaq.filter(t => inRange(t.date) && !t.short).forEach(t => {
+    const km = t.km;
+    if(km<5) dist['<5']++;
+    else if(km<15) dist['5-15']++;
+    else if(km<30) dist['15-30']++;
+    else if(km<50) dist['30-50']++;
+    else if(km<100) dist['50-100']++;
+    else dist['>100']++;
+  });
+  buildDistChart('enyaqDistChart', dist, ENYAQ_COLOR);
+}
+
+function buildSocChart() {
+  const chg = RAW.charges.filter(c => inRange(c.date));
+  const bins = {0:0,20:0,40:0,60:0,80:0};
+  chg.forEach(c => { const b = Math.floor(c.startSoc/20)*20; bins[Math.min(b,80)]++; });
+  const labels = ['0-20%','20-40%','40-60%','60-80%','80-100%'];
+  const vals = [0,20,40,60,80].map(b => bins[b]||0);
+  const ctx = document.getElementById('socChart').getContext('2d');
+  charts['socChart'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: vals, backgroundColor: CHARGE_COLOR+'33', borderColor: CHARGE_COLOR, borderWidth: 1.5, borderRadius: 3 }] },
+    options: { ...baseOpts('sessions'), plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} sessions` } } } }
+  });
+}
+
+function buildChargeDistChart() {
+  const chg = RAW.charges.filter(c => inRange(c.date));
+  const bins = {'<15':0,'15-25':0,'25-35':0,'35-45':0,'>45':0};
+  chg.forEach(c => {
+    if(c.kwh<15) bins['<15']++;
+    else if(c.kwh<25) bins['15-25']++;
+    else if(c.kwh<35) bins['25-35']++;
+    else if(c.kwh<45) bins['35-45']++;
+    else bins['>45']++;
+  });
+  const labels = ['<15kWh','15-25','25-35','35-45','>45'];
+  const vals = ['<15','15-25','25-35','35-45','>45'].map(b=>bins[b]);
+  const ctx = document.getElementById('chargeDistChart').getContext('2d');
+  charts['chargeDistChart'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data: vals, backgroundColor: ENYAQ_COLOR+'33', borderColor: ENYAQ_COLOR, borderWidth: 1.5, borderRadius: 3 }] },
+    options: { ...baseOpts('sessions'), plugins: { legend: { display: false } } }
+  });
+}
+
+// ── Stats display ─────────────────────────────────────────────────────────
+function renderStats() {
+  const e = computeENYAQ();
+  const ec4 = computeEC4();
+
+  document.getElementById('enyaq-stats').innerHTML = `
+    <div class="stat"><div class="stat-val">${e.totalKm.toLocaleString('hu')}</div><div class="stat-lbl">km driven</div></div>
+    <div class="stat"><div class="stat-val">${e.eff.toFixed(1)}</div><div class="stat-lbl">kWh/100km</div></div>
+    <div class="stat"><div class="stat-val">${e.maxTrip}</div><div class="stat-lbl">longest trip km</div></div>
+    <div class="stat"><div class="stat-val">${e.tripCount}</div><div class="stat-lbl">trips</div></div>
+    <div class="stat"><div class="stat-val">${Math.round(e.totalCharged)}</div><div class="stat-lbl">kWh charged</div><div class="stat-note">${e.fastChg} fast DC</div></div>
+    <div class="stat"><div class="stat-val">${e.sessions}</div><div class="stat-lbl">charge sessions</div></div>
+  `;
+
+  document.getElementById('ec4-stats').innerHTML = `
+    <div class="stat"><div class="stat-val">${ec4.totalKm.toLocaleString('hu')}</div><div class="stat-lbl">km driven</div></div>
+    <div class="stat"><div class="stat-val">—</div><div class="stat-lbl">kWh/100km</div><div class="stat-note">no export</div></div>
+    <div class="stat"><div class="stat-val">56</div><div class="stat-lbl">longest trip km</div></div>
+    <div class="stat"><div class="stat-val">891</div><div class="stat-lbl">trips</div></div>
+    <div class="stat"><div class="stat-val">7.1</div><div class="stat-lbl">avg trip km</div></div>
+    <div class="stat"><div class="stat-val">${ec4.months}</div><div class="stat-lbl">months data</div></div>
+  `;
+}
+
+// ── Rebuild everything ────────────────────────────────────────────────────
+function rebuildAll() {
+  destroyAll();
+  renderStats();
+
+  const enyaqMonthly = {};
+  RAW.enyaq.filter(t => !t.short && t.km > 0).forEach(t => {
+    const m = t.date.slice(0,7);
+    enyaqMonthly[m] = (enyaqMonthly[m]||0) + t.km;
+  });
+
+  // Charging by month for km estimation (months before trip data starts)
+  const chargeByMonth = {};
+  RAW.charges.filter(c => inRange(c.date)).forEach(c => {
+    const m = c.date.slice(0,7);
+    chargeByMonth[m] = (chargeByMonth[m]||0) + c.kwh;
+  });
+
+  const fm = getFilteredMonths();
+  // Actual trip km (0 for months before April 2026)
+  const enyaqActual = fm.map(m => m >= TRIP_DATA_START ? Math.round(enyaqMonthly[m]||0) : 0);
+  // Estimated km from charging for pre-April 2026 months
+  const enyaqEst = fm.map(m => m < TRIP_DATA_START ? Math.round((chargeByMonth[m]||0) * CHARGE_KM_FACTOR) : 0);
+
+  const enyaqData = { labels: fm.map(monthLabel), values: enyaqActual };
+  const enyaqEstData = { labels: fm.map(monthLabel), values: enyaqEst };
+  const ec4Data = { labels: fm.map(monthLabel), values: fm.map(m => Math.round(RAW.ec4_monthly[m]||0)) };
+
+  buildKmChart('enyaqKmChart', enyaqData, ENYAQ_COLOR, enyaqEstData);
+  buildKmChart('ec4KmChart', ec4Data, EC4_COLOR);
+  buildEffChart();
+  buildChargeChart();
+  buildENYAQDist();
+  buildDistChart('ec4DistChart', RAW.ec4_trip_dist, EC4_COLOR);
+  buildSocChart();
+  buildChargeDistChart();
+}
+
+rebuildAll();
+</script>
+</body>
+</html>
