@@ -125,6 +125,13 @@
       "total_kwh": 956,
       "total_eur": 251.37,
       "note": "Daily readings not available in bill. Consumption breakdown by period: P1=267 kWh, P2=246 kWh, P3=443 kWh. Total consumption 956 kWh over 31 days. Tariff 2.0TD, power P1/P2: 14.4kW. CUPS: ES0021000008282064AZ. Meter: 0043469599. Reading origin: Real CCH. Average consumption for postal code same period: 466.2 kWh."
+    },
+    {
+      "period_start": "2026-09-04",
+      "period_end": "2026-10-03",
+      "total_kwh": 1202,
+      "total_eur": 280.56,
+      "note": "Factura de electricidad de Gana Energía (Nº N_26004183041). Consumo por periodos: P1 295 kWh, P2 283 kWh, P3 624 kWh (total 1202 kWh). Tarifa 2.0TD con potencia contratada P1 14,4 kW y P2 14,4 kW. Lecturas reales de contador (Nº 0043469599). No se proporcionan lecturas diarias individuales. CUPS: ES0021000008282064AZ. Cliente: Matyas Csendes."
     }
   ]
 }
